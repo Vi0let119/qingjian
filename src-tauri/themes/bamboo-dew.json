@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "name": "bamboo-dew",
+  "base": "light",
+  "window": { "effect": "mica", "state": "active" },
+  "tokens": {
+    "color": {
+      "primary": "#2f6d4f",
+      "accent": "#d9a441",
+      "danger": "#b7472a",
+      "bg": "#f2f7f3",
+      "surface": "#fbfdf9",
+      "text": "#24332a",
+      "textSecondary": "#5f6f64",
+      "border": "rgba(47,109,79,0.22)"
+    },
+    "font": {
+      "family": "\"Segoe UI\", \"Microsoft YaHei UI\", system-ui, sans-serif",
+      "size": "14px"
+    },
+    "radius": "12px",
+    "shadow": "0 2px 14px rgba(36,51,42,0.1)"
+  },
+  "modules": {
+    "sidebar": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fbfdf9", "textColor": null },
+    "noteList": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": null, "textColor": null },
+    "tabs": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fbfdf9", "textColor": null },
+    "editor": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fbfdf9", "textColor": null },
+    "fragment": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fbfdf9", "textColor": null },
+    "settings": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fbfdf9", "textColor": null }
+  }
+}

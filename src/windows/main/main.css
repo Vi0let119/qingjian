@@ -1,0 +1,832 @@
+/* ============================================================
+   主窗口三栏布局（「植物园·纸张」设计方向）
+   ============================================================ */
+
+.qj-main {
+  display: grid;
+  /* 列宽由 MainWindow 内联 gridTemplateColumns 控制（用户可拖拽，localStorage 记忆） */
+  height: 100%;
+  background: var(--qj-window-gradient);
+  color: var(--qj-text);
+  overflow: hidden;
+}
+
+/* 全局背景图模式：主窗口底色让位给 window-backdrop 图层（否则渐变盖住壁纸） */
+body.qj-window-image-on .qj-main {
+  background: transparent;
+}
+
+/* 标签栏自身的不透明表面让位（毛玻璃由外层模块表面提供） */
+body.qj-window-image-on .qj-tabs-strip {
+  background: transparent;
+}
+
+/* 分栏拖拽条：悬浮在面板边界上（不占列宽），面板无缝相接 */
+.qj-main {
+  position: relative;
+}
+
+.qj-splitter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 5;
+  cursor: col-resize;
+  transition: background 0.15s ease;
+}
+
+.qj-splitter::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--qj-border);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.qj-splitter:hover {
+  background: var(--qj-primary-soft);
+}
+
+.qj-splitter:hover::after {
+  opacity: 1;
+  background: var(--qj-primary);
+}
+
+/* ModuleSurface 包裹层作为 grid 子项 */
+.qj-main-sidebar,
+.qj-main-notelist,
+.qj-main-tabs,
+.qj-main-daily {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.qj-main-sidebar > .qj-module-content,
+.qj-main-notelist > .qj-module-content,
+.qj-main-tabs > .qj-module-content,
+.qj-main-daily > .qj-module-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.qj-main-sidebar > .qj-module-content > *,
+.qj-main-notelist > .qj-module-content > *,
+.qj-main-tabs > .qj-module-content > *,
+.qj-main-daily > .qj-module-content > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- 侧栏 ---------- */
+
+.qj-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--qj-border);
+  background: var(--qj-surface);
+}
+
+.qj-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px 12px;
+}
+
+/* 标识：衬线字 + 蕨叶点缀 */
+.qj-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--qj-serif);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: var(--qj-primary);
+  user-select: none;
+}
+
+.qj-logo-leaf {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.qj-sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 圆形图标按钮：flex 居中防字形裁剪（修复「＋」被遮挡） */
+.qj-sidebar-icon-btn,
+.qj-sidebar-add {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  transition: transform 0.12s var(--qj-ease), background 0.18s var(--qj-ease),
+    color 0.18s var(--qj-ease), box-shadow 0.18s var(--qj-ease);
+}
+
+.qj-sidebar-icon-btn {
+  background: transparent;
+  color: var(--qj-text-secondary);
+}
+
+.qj-sidebar-icon-btn:hover {
+  background: var(--qj-primary-soft);
+  color: var(--qj-primary);
+}
+
+.qj-sidebar-add {
+  background: var(--qj-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
+}
+
+.qj-sidebar-add:hover {
+  transform: rotate(90deg);
+  box-shadow: 0 4px 14px rgba(74, 124, 89, 0.4);
+}
+
+.qj-sidebar-add:active,
+.qj-sidebar-icon-btn:active {
+  transform: scale(0.92);
+}
+
+.qj-sidebar-add-row {
+  display: flex;
+  gap: 6px;
+  padding: 0 14px 10px;
+}
+
+.qj-sidebar-add-row .qj-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 碎片入口：描边胶囊按钮，蕨绿描边 */
+.qj-fragment-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 14px 12px;
+}
+
+.qj-fragment-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(74, 124, 89, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qj-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.18s var(--qj-ease), color 0.18s var(--qj-ease),
+    box-shadow 0.18s var(--qj-ease), transform 0.12s var(--qj-ease);
+}
+
+.qj-fragment-btn:hover {
+  background: var(--qj-primary);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(74, 124, 89, 0.3);
+}
+
+.qj-fragment-btn:active {
+  transform: scale(0.97);
+}
+
+.qj-fragment-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* 快捷键徽标（按钮右侧） */
+.qj-fragment-btn-key {
+  margin-left: auto;
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(74, 124, 89, 0.14);
+  color: var(--qj-primary);
+  letter-spacing: 0.03em;
+}
+
+/* 每日碎片按钮激活态（浏览视图打开时） */
+.qj-fragment-btn.is-active {
+  background: var(--qj-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
+}
+
+.qj-notebook-list {
+  flex: 1;
+  min-height: 0; /* 防内容膨胀撑破滚动链（笔记本多了必须有滚动） */
+  overflow-y: auto;
+  padding: 4px 10px;
+}
+
+.qj-notebook-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  margin: 2px 0;
+  border-radius: var(--qj-radius);
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--qj-text);
+  transition: background 0.16s var(--qj-ease), color 0.16s var(--qj-ease),
+    transform 0.16s var(--qj-ease);
+}
+
+.qj-notebook-item:hover {
+  background: var(--qj-primary-soft);
+  transform: translateX(2px);
+}
+
+.qj-notebook-item.is-active {
+  background: var(--qj-primary-soft);
+  color: var(--qj-primary);
+  font-weight: 600;
+  box-shadow: inset 2.5px 0 0 var(--qj-primary);
+}
+
+.qj-notebook-icon {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.qj-notebook-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qj-notebook-count {
+  font-size: 10.5px;
+  color: var(--qj-text-secondary);
+  background: var(--qj-primary-soft);
+  border-radius: 9px;
+  padding: 1px 8px;
+}
+
+.qj-notebook-actions {
+  display: none;
+  gap: 2px;
+}
+
+.qj-notebook-item:hover .qj-notebook-actions {
+  display: inline-flex;
+}
+
+.qj-notebook-actions button,
+.qj-note-item-actions button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 4px;
+  border-radius: 5px;
+  color: var(--qj-text-secondary);
+  line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.qj-notebook-actions button:hover,
+.qj-note-item-actions button:hover {
+  background: var(--qj-primary-soft);
+  color: var(--qj-primary);
+}
+
+.qj-note-item-actions button:last-child:hover {
+  color: var(--qj-danger);
+}
+
+.qj-notebook-edit {
+  width: 100%;
+}
+
+/* 底部植物线稿 */
+.qj-sidebar-footer {
+  padding: 8px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.qj-plant {
+  width: 100%;
+  height: 48px;
+  display: block;
+}
+
+/* ---------- 笔记列表 ---------- */
+
+.qj-note-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--qj-border);
+  background: var(--qj-bg);
+}
+
+.qj-note-list-header {
+  display: flex;
+  gap: 8px;
+  padding: 14px;
+}
+
+.qj-note-list-header .qj-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 排序下拉（与搜索框同排） */
+.qj-sort-select {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--qj-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qj-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.qj-sort-select:hover,
+.qj-sort-select:focus {
+  border-color: var(--qj-primary);
+  color: var(--qj-primary);
+}
+
+.qj-note-list-header .qj-btn-primary {
+  width: 34px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.qj-note-items {
+  flex: 1;
+  min-height: 0; /* 防内容膨胀撑破滚动链（笔记多了必须有滚动） */
+  overflow-y: auto;
+  padding: 0 10px 14px;
+}
+
+.qj-note-item {
+  display: flex;
+  align-items: center;
+  padding: 11px 14px;
+  margin: 3px 0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.16s var(--qj-ease), box-shadow 0.16s var(--qj-ease);
+}
+
+.qj-note-item:hover {
+  background: var(--qj-primary-soft);
+}
+
+.qj-note-item.is-active {
+  background: var(--qj-surface);
+  box-shadow: var(--qj-shadow), inset 2.5px 0 0 var(--qj-primary);
+}
+
+.qj-note-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.qj-note-title {
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 内容检索命中 */
+.qj-hit-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--qj-primary-soft);
+  color: var(--qj-primary);
+}
+
+.qj-note-snippet {
+  font-size: 11.5px;
+  color: var(--qj-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qj-snippet-mark {
+  background: rgba(249, 166, 32, 0.3);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.qj-note-time {
+  font-size: 11px;
+  color: var(--qj-text-secondary);
+}
+
+.qj-note-item-actions {
+  display: none;
+  gap: 2px;
+}
+
+.qj-note-item:hover .qj-note-item-actions {
+  display: inline-flex;
+}
+
+.qj-note-open-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--qj-accent);
+  align-self: center;
+  box-shadow: 0 0 0 3px rgba(249, 166, 32, 0.18);
+}
+
+/* ---------- 标签页与编辑器区 ---------- */
+
+.qj-tabs-root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* 透明：底色由"标签栏"与"内容区"两个 ModuleSurface 分别绘制，
+     否则内容区模块的纯色/背景图被父层不透明背景盖住 */
+  background: transparent;
+  position: relative;
+}
+
+.qj-tabs-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 10px 0;
+  overflow-x: auto;
+  flex-shrink: 0;
+  background: var(--qj-surface);
+}
+
+.qj-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 200px;
+  padding: 7px 8px 8px 14px;
+  border-radius: 12px 12px 0 0;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--qj-text-secondary);
+  background: transparent;
+  transition: background 0.16s var(--qj-ease), color 0.16s var(--qj-ease);
+}
+
+.qj-tab:hover {
+  background: var(--qj-primary-soft);
+}
+
+.qj-tab.is-active {
+  background: var(--qj-surface);
+  color: var(--qj-primary);
+  font-weight: 600;
+  box-shadow: 0 -2px 0 var(--qj-primary);
+}
+
+.qj-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qj-tab-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: var(--qj-text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.qj-tab-close:hover {
+  background: var(--qj-primary-soft);
+  color: var(--qj-danger);
+}
+
+.qj-tabs-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  border-top: 1px solid var(--qj-border);
+  margin-top: -1px;
+}
+
+/* 内容区主题层必须撑满 tabs-body（flex:1 宽度 + min-height:0 防高度膨胀）——
+   min-height:0 是关键：flex 列缺它会随内容长高，编辑器滚动容器跟着膨胀，
+   结果 clientHeight == scrollHeight 无内容可滚（滚轮/按键全失效） */
+.qj-tabs-body > .qj-module-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.qj-tabs-body > .qj-module-content > .qj-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qj-tab-pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0; /* 同上：防内容膨胀撑破滚动链 */
+  display: flex;
+}
+
+.qj-tab-pane > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- 每日碎片浏览器 ---------- */
+
+.qj-daily {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: transparent;
+}
+
+.qj-daily-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--qj-primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qj-primary);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.16s var(--qj-ease), color 0.16s var(--qj-ease);
+}
+
+.qj-daily-back:hover {
+  background: var(--qj-primary);
+  color: #fff;
+}
+
+.qj-daily-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--qj-border);
+}
+
+.qj-daily-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--qj-primary);
+  letter-spacing: 0.12em;
+}
+
+.qj-daily-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  /* 关键：行高不随内容膨胀（minmax(0,1fr) 约束），否则内容区被撑高后
+     超出容器被 overflow:hidden 裁掉、滚动条不出现（"看不到下面的内容"） */
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.qj-daily-days {
+  overflow-y: auto;
+  padding: 10px;
+  border-right: 1px solid var(--qj-border);
+}
+
+.qj-daily-day {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 9px 10px 9px 12px;
+  margin: 3px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.16s var(--qj-ease), color 0.16s var(--qj-ease);
+}
+
+.qj-daily-day-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qj-daily-day-del {
+  display: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 5px;
+  border-radius: 5px;
+  color: var(--qj-text-secondary);
+  line-height: 1;
+}
+
+.qj-daily-day:hover .qj-daily-day-del {
+  display: inline-block;
+}
+
+.qj-daily-day-del:hover {
+  background: var(--qj-primary-soft);
+  color: var(--qj-danger);
+}
+
+.qj-daily-day:hover {
+  background: var(--qj-primary-soft);
+}
+
+.qj-daily-day.is-active {
+  background: var(--qj-primary-soft);
+  color: var(--qj-primary);
+  font-weight: 600;
+  box-shadow: inset 2.5px 0 0 var(--qj-primary);
+}
+
+.qj-daily-day-date {
+  font-size: 11px;
+  color: var(--qj-text-secondary);
+  font-weight: 400;
+}
+
+.qj-daily-content {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.qj-daily-content > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- 空状态 ---------- */
+
+.qj-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--qj-text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.qj-empty-title {
+  font-family: var(--qj-serif);
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--qj-primary);
+  margin: 0;
+}
+
+.qj-empty-leaf {
+  width: 46px;
+  height: 46px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+}
+
+.qj-empty-hint {
+  font-size: 12.5px;
+  opacity: 0.75;
+}
+
+.qj-empty-small {
+  padding: 24px 0;
+  font-size: 13px;
+}
+
+/* ---------- 错误条 / 确认框 ---------- */
+
+.qj-error-bar {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--qj-danger);
+  color: #fff;
+  font-size: 12.5px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(183, 71, 42, 0.35);
+  z-index: 100;
+  animation: qj-rise-in 0.3s var(--qj-ease);
+  max-width: 70vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qj-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 43, 40, 0.28);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: qj-fade-in 0.18s ease both;
+}
+
+@keyframes qj-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.qj-confirm-box {
+  background: var(--qj-surface);
+  border-radius: 16px;
+  padding: 22px 24px;
+  min-width: 300px;
+  max-width: 440px;
+  box-shadow: 0 8px 32px rgba(43, 43, 40, 0.22);
+  animation: qj-rise-in 0.28s var(--qj-ease);
+}
+
+.qj-confirm-msg {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--qj-text);
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+.qj-confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

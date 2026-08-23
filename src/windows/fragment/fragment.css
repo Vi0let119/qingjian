@@ -1,0 +1,133 @@
+/* ============================================================
+   碎片窗口（精简小窗 · 「植物园·纸张」）
+   ============================================================ */
+
+.qj-fragment {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--qj-surface);
+  color: var(--qj-text);
+  overflow: hidden;
+}
+
+/* 模块内容层转纵向 flex：header + 编辑器正确分高（编辑器 flex:1 可滚动），
+   否则编辑器 height:100% + header 会整体溢出被裁 */
+.qj-fragment > .qj-module-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.qj-fragment .qj-editor {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+.qj-frag-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--qj-border);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.qj-frag-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--qj-primary);
+  letter-spacing: 0.06em;
+}
+
+/* 标题前的小叶芽 */
+.qj-frag-title svg {
+  color: var(--qj-accent);
+  flex-shrink: 0;
+}
+
+.qj-frag-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--qj-text-secondary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.qj-frag-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--qj-accent);
+}
+
+.qj-frag-status:not(.qj-frag-clean) {
+  opacity: 1;
+}
+
+.qj-frag-saved {
+  color: var(--qj-primary);
+}
+
+.qj-frag-saved::before {
+  background: var(--qj-primary);
+}
+
+.qj-frag-error {
+  color: var(--qj-danger);
+}
+
+.qj-frag-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--qj-text-secondary);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s var(--qj-ease);
+}
+
+.qj-frag-close:hover {
+  background: var(--qj-primary-soft);
+  color: var(--qj-danger);
+}
+
+.qj-frag-close:active {
+  transform: scale(0.9);
+}
+
+.qj-frag-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 13px;
+  padding: 16px;
+}
+
+.qj-frag-error-line {
+  padding: 5px 12px;
+  margin: 6px 10px 0;
+  background: var(--qj-danger);
+  color: #fff;
+  font-size: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

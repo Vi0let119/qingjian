@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "name": "zhuying",
+  "base": "light",
+  "window": { "effect": "mica", "state": "active" },
+  "tokens": {
+    "color": {
+      "primary": "#a0442e",
+      "accent": "#e0928f",
+      "danger": "#b7472a",
+      "bg": "#faf4ee",
+      "surface": "#fdf9f4",
+      "text": "#3a2a24",
+      "textSecondary": "#7a6a60",
+      "border": "rgba(160,68,46,0.22)"
+    },
+    "font": {
+      "family": "\"Segoe UI\", \"Microsoft YaHei UI\", system-ui, sans-serif",
+      "size": "14px"
+    },
+    "radius": "10px",
+    "shadow": "0 2px 14px rgba(58,42,36,0.12)"
+  },
+  "modules": {
+    "sidebar": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fdf9f4", "textColor": null },
+    "noteList": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": null, "textColor": null },
+    "tabs": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fdf9f4", "textColor": null },
+    "editor": { "backgroundImage": "PRESET_BG::zhuying.jpg", "backgroundFit": "cover", "blur": 0, "solidColor": null, "textColor": null },
+    "fragment": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fdf9f4", "textColor": null },
+    "settings": { "backgroundImage": null, "backgroundFit": "cover", "blur": 0, "solidColor": "#fdf9f4", "textColor": null }
+  }
+}

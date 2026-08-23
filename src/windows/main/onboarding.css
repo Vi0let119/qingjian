@@ -1,0 +1,123 @@
+/* 首次启动教程（植物园·纸张风格） */
+
+.qj-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43, 43, 40, 0.32);
+  backdrop-filter: blur(4px);
+  animation: qj-fade-in 0.25s ease both;
+}
+
+.qj-onboarding.is-leaving {
+  animation: qj-fade-out 0.32s var(--qj-ease) both;
+}
+
+@keyframes qj-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.qj-onboarding-card {
+  width: 420px;
+  max-width: 90vw;
+  padding: 34px 36px 28px;
+  border-radius: 20px;
+  background: var(--qj-surface);
+  box-shadow: 0 12px 44px rgba(43, 43, 40, 0.24);
+  text-align: center;
+  animation: qj-rise-in 0.4s var(--qj-ease) both;
+}
+
+.qj-onboarding-leaf {
+  width: 46px;
+  height: 46px;
+  color: var(--qj-primary);
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+
+.qj-onboarding-title {
+  margin: 0;
+  font-family: var(--qj-serif);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--qj-primary);
+}
+
+.qj-onboarding-sub {
+  margin: 6px 0 22px;
+  font-size: 13px;
+  color: var(--qj-text-secondary);
+}
+
+.qj-onboarding-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.qj-onboarding-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--qj-primary-soft);
+}
+
+.qj-onboarding-desc {
+  font-size: 13px;
+  color: var(--qj-text);
+}
+
+.qj-onboarding-keys {
+  display: flex;
+  gap: 5px;
+}
+
+.qj-onboarding-keys kbd {
+  min-width: 26px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--qj-border);
+  border-bottom-width: 2px;
+  background: var(--qj-surface);
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--qj-primary);
+}
+
+.qj-onboarding-tips {
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qj-onboarding-tips li {
+  font-size: 12.5px;
+  color: var(--qj-text-secondary);
+}
+
+.qj-onboarding-tips li::before {
+  content: "❧";
+  color: var(--qj-primary);
+  margin-right: 7px;
+  opacity: 0.6;
+}
+
+.qj-onboarding-start {
+  min-width: 150px;
+}

@@ -1,0 +1,276 @@
+/* ============================================================
+   编辑器（「植物园·纸张」：如稿纸般的书写体验）
+   ============================================================ */
+
+.qj-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+/* ---------- 工具栏 ---------- */
+
+.qj-menubar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--qj-border);
+  background: var(--qj-surface);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* 全局背景图模式：工具栏不透明表面让位（毛玻璃由外层模块表面提供） */
+body.qj-window-image-on .qj-menubar {
+  background: transparent;
+}
+
+.qj-menubar-btn {
+  min-width: 30px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--qj-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s var(--qj-ease), color 0.15s var(--qj-ease),
+    transform 0.1s var(--qj-ease);
+}
+
+.qj-menubar-btn:hover {
+  background: var(--qj-primary-soft);
+  color: var(--qj-primary);
+}
+
+.qj-menubar-btn:active {
+  transform: scale(0.92);
+}
+
+.qj-menubar-btn.is-active {
+  background: var(--qj-primary-soft);
+  color: var(--qj-primary);
+  box-shadow: inset 0 0 0 1px rgba(74, 124, 89, 0.3);
+}
+
+.qj-menubar-b {
+  font-weight: 700;
+  font-family: var(--qj-serif);
+}
+
+.qj-menubar-i {
+  font-style: italic;
+  font-family: var(--qj-serif);
+}
+
+.qj-menubar-u {
+  text-decoration: underline;
+}
+
+.qj-menubar-img {
+  font-size: 13px;
+}
+
+.qj-menubar-size {
+  height: 28px;
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1px solid var(--qj-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qj-text);
+  font-size: 12.5px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.qj-menubar-size:focus {
+  border-color: var(--qj-primary);
+}
+
+/* ---------- 书写区 ---------- */
+
+.qj-editor-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.qj-editor-content {
+  min-height: 100%;
+  /* 稿纸点格纹理：极淡的绿色细点，像真正的书写纸 */
+  background-image: radial-gradient(rgba(74, 124, 89, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  padding: 34px 40px 90px;
+  font-size: 16.5px;
+  line-height: 1.9;
+  color: var(--qj-text);
+  outline: none;
+  caret-color: var(--qj-primary);
+}
+
+.qj-editor-compact {
+  padding: 14px 16px 44px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ProseMirror 排版 */
+
+.qj-editor-content p {
+  margin: 0 0 0.55em;
+}
+
+.qj-editor-content h1,
+.qj-editor-content h2,
+.qj-editor-content h3 {
+  font-family: var(--qj-serif);
+  margin: 1.15em 0 0.5em;
+  line-height: 1.4;
+  color: var(--qj-text);
+  letter-spacing: 0.02em;
+}
+
+.qj-editor-content h1 {
+  font-size: 1.65em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--qj-border);
+}
+
+.qj-editor-content h2 {
+  font-size: 1.32em;
+  /* 标题前的蕨叶小节符，精致且呼应主题 */
+}
+
+.qj-editor-content h2::before {
+  content: "❧";
+  color: var(--qj-primary);
+  font-size: 0.8em;
+  margin-right: 0.45em;
+  opacity: 0.7;
+}
+
+.qj-editor-content h3 {
+  font-size: 1.12em;
+}
+
+.qj-editor-content blockquote {
+  margin: 0.9em 0;
+  padding: 0.3em 1.1em;
+  border-left: 3px solid var(--qj-accent);
+  color: var(--qj-text-secondary);
+  background: var(--qj-primary-soft);
+  border-radius: 0 10px 10px 0;
+}
+
+.qj-editor-content ul,
+.qj-editor-content ol {
+  padding-left: 1.7em;
+  margin: 0.45em 0;
+}
+
+.qj-editor-content li {
+  margin: 0.18em 0;
+}
+
+.qj-editor-content code {
+  background: var(--qj-primary-soft);
+  border-radius: 5px;
+  padding: 0.12em 0.42em;
+  font-size: 0.88em;
+  font-family: Consolas, "Cascadia Code", monospace;
+}
+
+.qj-editor-content pre {
+  background: rgba(74, 124, 89, 0.07);
+  border-radius: var(--qj-radius);
+  padding: 14px 18px;
+  overflow-x: auto;
+  border: 1px solid var(--qj-border);
+}
+
+.qj-editor-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.qj-editor-content img {
+  max-width: 100%;
+  border-radius: 12px;
+  display: block;
+  margin: 0.8em auto;
+  box-shadow: var(--qj-shadow);
+}
+
+.qj-editor-content img.ProseMirror-selectednode {
+  outline: 2px solid var(--qj-primary);
+  outline-offset: 3px;
+}
+
+/* 占位符 */
+.qj-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--qj-text-secondary);
+  opacity: 0.55;
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* ---------- 保存状态指示（右下角，伴生小圆点） ---------- */
+
+.qj-save-indicator {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--qj-text-secondary);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.qj-save-indicator::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--qj-accent);
+}
+
+.qj-save-indicator:not(.qj-save-clean):not(.qj-save-saved) {
+  opacity: 1;
+}
+
+.qj-save-indicator:not(.qj-save-clean):not(.qj-save-saved)::before {
+  animation: qj-save-pulse 1s ease-in-out infinite;
+}
+
+@keyframes qj-save-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.qj-save-saved {
+  color: var(--qj-primary);
+}
+
+.qj-save-saved::before {
+  background: var(--qj-primary);
+}

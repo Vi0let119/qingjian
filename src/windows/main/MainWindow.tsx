@@ -1,0 +1,207 @@
+// 主窗口：三栏布局（导航栏 / 笔记列表 / 标签页编辑器）+ 错误提示条。
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { Sidebar } from "./Sidebar";
+import { NoteList } from "./NoteList";
+import { NoteTabs } from "./NoteTabs";
+import { DailyBrowser } from "./DailyBrowser";
+import { useNoteStore } from "../../stores/useNoteStore";
+import { useFragmentStore } from "../../stores/useFragmentStore";
+import { ModuleSurface } from "../../components/theme/ModuleSurface";
+import { Onboarding } from "./Onboarding";
+import "./main.css";
+
+/**
+ * 分栏拖拽：起始状态 → mousemove 增量更新 → mouseup 收尾。
+ * collapsible：允许拖到阈值以下直接收起（宽度变 0）；从收起状态可重新拖出。
+ */
+function startDrag(
+  e: ReactMouseEvent,
+  current: number,
+  min: number,
+  max: number,
+  setter: (w: number) => void,
+  collapsible = false
+) {
+  e.preventDefault();
+  const startX = e.clientX;
+  const startW = current;
+  const COLLAPSE_THRESHOLD = 120;
+  const onMove = (ev: MouseEvent) => {
+    const raw = startW + ev.clientX - startX;
+    let w = Math.min(max, Math.max(startW === 0 ? 0 : min, raw));
+    if (collapsible && raw < COLLAPSE_THRESHOLD) {
+      w = 0; // 拖到最窄阈值以下 → 收起
+    }
+    setter(w);
+  };
+  const onUp = () => {
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+  };
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+  document.body.style.userSelect = "none";
+  document.body.style.cursor = "col-resize";
+}
+
+function Divider({
+  left,
+  onMouseDown,
+  onDoubleClick,
+}: {
+  /** 悬浮位置：距左侧偏移（px），分隔条居中压在面板边界上 */
+  left: number;
+  onMouseDown: (e: ReactMouseEvent) => void;
+  onDoubleClick?: () => void;
+}) {
+  return (
+    <div
+      className="qj-splitter"
+      style={{ left: left - 3 }}
+      onMouseDown={onMouseDown}
+      onDoubleClick={onDoubleClick}
+    />
+  );
+}
+
+export function MainWindow() {
+  const init = useNoteStore((s) => s.init);
+  const error = useNoteStore((s) => s.error);
+  const dailyBrowserOpen = useFragmentStore((s) => s.dailyBrowserOpen);
+  const fragError = useFragmentStore((s) => s.error);
+
+  // 分栏宽度（用户可拖拽，localStorage 记忆）
+  // 坑：localStorage 无记录时 getItem 返回 null，Number(null) === 0——
+  // 若允许 0 会被误认为"收起"，导致全新用户笔记列表默认塌陷
+  const [sidebarW, setSidebarW] = useState(() => {
+    const raw = localStorage.getItem("qj-sidebar-w");
+    if (raw === null) return 224;
+    const v = Number(raw);
+    return Number.isFinite(v) && v > 0 ? v : 224;
+  });
+  const [noteListW, setNoteListW] = useState(() => {
+    const raw = localStorage.getItem("qj-notelist-w");
+    if (raw === null) return 284;
+    const v = Number(raw);
+    return Number.isFinite(v) && v >= 0 ? v : 284;
+  });
+  // 首次启动教程（仅显示一次）
+  const [onboardingDone, setOnboardingDone] = useState(
+    () => localStorage.getItem("qj-onboarding-done") !== null
+  );
+  useEffect(() => {
+    localStorage.setItem("qj-sidebar-w", String(sidebarW));
+  }, [sidebarW]);
+  useEffect(() => {
+    localStorage.setItem("qj-notelist-w", String(noteListW));
+  }, [noteListW]);
+
+  useEffect(() => {
+    void init();
+  }, [init]);
+
+  // 快捷键：Ctrl+N 新建笔记 / Ctrl+F 新建碎片（F=Fragment）/
+  //         Ctrl+Shift+N 新建碎片（兼容）/ Ctrl+S 立即落盘
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const k = e.key.toLowerCase();
+      if (k === "n") {
+        e.preventDefault();
+        if (e.shiftKey) void useFragmentStore.getState().newFragment();
+        else void useNoteStore.getState().createNote();
+      } else if (k === "f") {
+        e.preventDefault();
+        void useFragmentStore.getState().newFragment();
+      } else if (k === "s") {
+        e.preventDefault();
+        // flush 全部打开标签的挂起保存
+        for (const flush of useNoteStore.getState().flushRegistry.values()) flush();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // 关窗前强制落盘所有打开标签。
+  // 坑：不能用 preventDefault()+destroy() 组合——Tauri 2 中该组合会卡住关闭流程
+  // （close 请求被挂起、destroy 被抑制，窗口永远关不掉）。
+  // 正确做法：不 preventDefault，Tauri 会等待这个异步回调完成后再正常关窗。
+  useEffect(() => {
+    const win = getCurrentWindow();
+    let unlisten: (() => void) | null = null;
+    void win
+      .onCloseRequested(async () => {
+        for (const flush of useNoteStore.getState().flushRegistry.values()) {
+          try {
+            flush();
+          } catch (e) {
+            console.error("关窗落盘失败", e);
+          }
+        }
+      })
+      .then((un) => {
+        unlisten = un;
+      });
+    return () => unlisten?.();
+  }, []);
+
+  const errorMsg = error ?? fragError;
+  const clearError = () => {
+    useNoteStore.setState({ error: null });
+    useFragmentStore.setState({ error: null });
+  };
+
+  const gridColumns = dailyBrowserOpen
+    ? `${sidebarW}px 1fr`
+    : `${sidebarW}px ${noteListW}px 1fr`;
+
+  return (
+    <div className="qj-main" style={{ gridTemplateColumns: gridColumns }}>
+      <ModuleSurface module="sidebar" className="qj-main-sidebar qj-reveal qj-reveal-1">
+        <Sidebar />
+      </ModuleSurface>
+      {/* 分隔条悬浮在面板边界上（不占列宽，面板无缝相接，拖动功能保留） */}
+      <Divider
+        left={sidebarW}
+        onMouseDown={(e) => startDrag(e, sidebarW, 160, 420, setSidebarW)}
+      />
+      {dailyBrowserOpen ? (
+        <ModuleSurface module="tabs" className="qj-main-daily qj-reveal qj-reveal-2">
+          <DailyBrowser />
+        </ModuleSurface>
+      ) : (
+        <>
+          <ModuleSurface module="noteList" className="qj-main-notelist qj-reveal qj-reveal-2">
+            <NoteList />
+          </ModuleSurface>
+          <Divider
+            left={sidebarW + noteListW}
+            onMouseDown={(e) => startDrag(e, noteListW, 200, 520, setNoteListW, true)}
+            onDoubleClick={() => setNoteListW((w) => (w === 0 ? 284 : 0))}
+          />
+          <ModuleSurface module="tabs" className="qj-main-tabs qj-reveal qj-reveal-3">
+            <NoteTabs />
+          </ModuleSurface>
+        </>
+      )}
+      {errorMsg && (
+        <div className="qj-error-bar" onClick={clearError}>
+          {errorMsg}（点击关闭）
+        </div>
+      )}
+      {!onboardingDone && (
+        <Onboarding
+          onDone={() => {
+            localStorage.setItem("qj-onboarding-done", "1");
+            setOnboardingDone(true);
+          }}
+        />
+      )}
+    </div>
+  );
+}

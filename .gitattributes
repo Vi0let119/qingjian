@@ -1,0 +1,11 @@
+# 统一换行符，消除 Windows 上 CRLF 警告噪音
+* text=auto
+*.rs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.svg text eol=lf

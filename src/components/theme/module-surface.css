@@ -1,0 +1,72 @@
+/* ModuleSurface 分层渲染 */
+
+.qj-module {
+  position: relative;
+  overflow: hidden;
+  /* 始终绘制自身解析出的底色（无纯色覆盖/无背景图时用窗口渐变，与主题和谐；
+     solidColor 由内联样式覆盖）。这是模块主题改动可见的关键 */
+  background: var(--qj-window-gradient);
+}
+
+.qj-module[data-has-image] {
+  background: transparent; /* 背景图模式：由背景图层接管 */
+}
+
+/* 全窗口背景图开启：模块呈毛玻璃效果（半透明背景由内联样式提供） */
+.qj-module-frosted {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 关键：模块内部的直接子面板（.qj-sidebar/.qj-note-list 等）自带不透明背景，
+   会把毛玻璃盖死——全局图模式下透明化（深层元素不受影响） */
+body.qj-window-image-on .qj-module-frosted > .qj-module-content > * {
+  background: transparent;
+}
+
+/* 嵌套毛玻璃（标签栏模块内套内容区模块）：内层不再叠加半透明与模糊，
+   否则 0.6×0.6 白 + 双重模糊 ≈ 纯白。内层透明，由外层统一提供毛玻璃 */
+.qj-module-frosted .qj-module-frosted {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: transparent !important;
+}
+
+/* 背景图层：模糊只作用于图片本身（filter 代价小），上限 30px */
+.qj-module-bg {
+  position: absolute;
+  inset: var(--qj-m-bg-inset, 0); /* 有雾化时外扩防 blur 边缘露白，否则 0 避免裁切 */
+  background-image: var(--qj-m-bg-image);
+  background-size: var(--qj-m-bg-fit, cover);
+  background-position: center;
+  background-repeat: var(--qj-m-bg-repeat, no-repeat);
+  filter: blur(var(--qj-m-blur, 0px));
+  pointer-events: none;
+}
+
+/* 背景图模式下：直接子面板背景透明，透出图片（深层元素不受影响） */
+.qj-module[data-has-image] > .qj-module-content > * {
+  background: transparent;
+}
+
+/* frost 遮罩：对比度兜底（仅需要时出现） */
+.qj-module-content {
+  position: relative;
+  height: 100%;
+  min-height: 0; /* 防内容膨胀撑破滚动链（flex 上下文） */
+  color: var(--qj-m-text, var(--qj-text, #2b2b28));
+}
+
+.qj-module-content::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--qj-m-frost, transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.qj-module-content > * {
+  position: relative;
+  z-index: 1;
+}

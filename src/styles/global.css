@@ -1,0 +1,215 @@
+/* ============================================================
+   轻笺 · 全局样式
+   设计方向：「植物园 · 纸张」（Botanical Paper）
+   —— 编辑部如稿纸（点格纹理/衬线标题/窄栏行文），界面克制留白，
+      蕨绿点状强调，植物线稿贯穿，入场渐次浮现。
+   主题 tokens 由 ThemeProvider 动态写入 :root；此处为默认兜底。
+   ============================================================ */
+
+:root {
+  /* Botanical Garden 默认主题 tokens（M5 起由 ThemeProvider 动态写入） */
+  --qj-primary: #4a7c59;
+  --qj-primary-soft: rgba(74, 124, 89, 0.12);
+  --qj-accent: #f9a620;
+  --qj-danger: #b7472a;
+  --qj-bg: #f5f3ed;
+  --qj-surface: #fffdf8;
+  --qj-text: #2b2b28;
+  --qj-text-secondary: #6b6b63;
+  --qj-border: rgba(74, 124, 89, 0.25);
+  --qj-radius: 10px;
+  --qj-shadow: 0 2px 12px rgba(43, 43, 40, 0.08);
+  /* 设计扩展变量 */
+  --qj-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --qj-serif: Georgia, "Nimbus Roman", SimSun, "宋体", serif;
+  /* 窗口底色渐变（ThemeProvider 按主题动态推导覆盖） */
+  --qj-window-gradient: linear-gradient(
+    168deg,
+    #f5f3ed 0%,
+    #edf1ea 34%,
+    #faf7f0 70%,
+    #f5f3ed 100%
+  );
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--qj-bg);
+  color: var(--qj-text);
+  font-family: var(--qj-font-family, "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif);
+  font-size: var(--qj-font-size, 14px);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  height: 100%;
+  position: relative;
+  z-index: 1; /* 面板层在全窗口背景层（z-index:0）之上 */
+}
+
+/* 全窗口背景图层（ThemeProvider 渲染，三个窗口共用） */
+.qj-window-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-position: center;
+}
+
+/* ---------- 细窄主题滚动条 ---------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(74, 124, 89, 0.22);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 124, 89, 0.42);
+  background-clip: content-box;
+}
+
+/* ---------- 入场动效（主窗口三栏渐次浮现） ---------- */
+
+@keyframes qj-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.qj-reveal {
+  animation: qj-rise-in 0.55s var(--qj-ease) both;
+}
+
+.qj-reveal-1 {
+  animation-delay: 0.06s;
+}
+
+.qj-reveal-2 {
+  animation-delay: 0.14s;
+}
+
+.qj-reveal-3 {
+  animation-delay: 0.22s;
+}
+
+/* 叶片轻轻浮动的装饰动画 */
+@keyframes qj-leaf-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(3deg);
+  }
+}
+
+.qj-leaf-float {
+  animation: qj-leaf-float 6s ease-in-out infinite;
+}
+
+/* ---------- 输入与按钮基元 ---------- */
+
+.qj-input {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--qj-border);
+  border-radius: 999px;
+  background: var(--qj-surface);
+  color: var(--qj-text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.18s var(--qj-ease), box-shadow 0.18s var(--qj-ease);
+}
+
+.qj-input::placeholder {
+  color: var(--qj-text-secondary);
+  opacity: 0.65;
+}
+
+.qj-input:focus {
+  border-color: var(--qj-primary);
+  box-shadow: 0 0 0 3px var(--qj-primary-soft);
+}
+
+.qj-btn,
+.qj-btn-primary,
+.qj-btn-danger {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--qj-border);
+  background: var(--qj-surface);
+  color: var(--qj-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 0.12s var(--qj-ease), box-shadow 0.18s var(--qj-ease),
+    background 0.18s var(--qj-ease), border-color 0.18s var(--qj-ease);
+}
+
+.qj-btn:hover {
+  background: var(--qj-primary-soft);
+  border-color: var(--qj-primary);
+}
+
+.qj-btn-primary {
+  background: var(--qj-primary);
+  border-color: var(--qj-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.28);
+}
+
+.qj-btn-primary:hover {
+  box-shadow: 0 4px 14px rgba(74, 124, 89, 0.36);
+}
+
+.qj-btn-danger {
+  background: var(--qj-danger);
+  border-color: var(--qj-danger);
+  color: #fff;
+}
+
+.qj-btn:active,
+.qj-btn-primary:active,
+.qj-btn-danger:active {
+  transform: scale(0.96);
+}
+
+/* 键盘可达性：统一的绿色焦点环 */
+:focus-visible {
+  outline: 2px solid var(--qj-primary);
+  outline-offset: 2px;
+}
+
+/* 主题切换等全局过渡（避免视觉跳动） */
+.qj-module,
+.qj-main,
+.qj-sidebar,
+.qj-note-list,
+.qj-tabs-root {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}

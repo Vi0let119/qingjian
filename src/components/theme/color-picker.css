@@ -1,0 +1,43 @@
+.qj-color-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qj-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.qj-color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid rgba(43, 43, 40, 0.15);
+  cursor: pointer;
+  padding: 0;
+}
+
+.qj-color-swatch.is-active {
+  outline: 2px solid var(--qj-primary, #4a7c59);
+  outline-offset: 2px;
+}
+
+.qj-color-native {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--qj-text-secondary, #6b6b63);
+}
+
+.qj-color-native input[type="color"] {
+  width: 32px;
+  height: 26px;
+  border: 1px solid rgba(43, 43, 40, 0.15);
+  border-radius: 6px;
+  padding: 1px;
+  background: transparent;
+  cursor: pointer;
+}
