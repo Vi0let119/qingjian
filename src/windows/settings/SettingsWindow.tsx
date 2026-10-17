@@ -2,7 +2,7 @@
 // 所有改动写入 zustand 预览态（本窗口实时生效），点"应用"才持久化并广播全窗口。
 import { useCallback, useEffect, useRef, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { api, type ModuleConfig, type ThemeConfig } from "../../lib/api";
+import { api, type AppSettings, type ModuleConfig, type ThemeConfig } from "../../lib/api";
 import { filePathToResizedDataUri } from "../../lib/dataUri";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { ColorPicker } from "../../components/theme/ColorPicker";
@@ -50,6 +50,64 @@ export default function SettingsWindow() {
   const [presets, setPresets] = useState<{ id: string; cfg: ThemeConfig; builtin: boolean }[]>([]);
   const [savingScheme, setSavingScheme] = useState(false);
   const [schemeName, setSchemeName] = useState("");
+  // 通用设置：启动时显示的界面（非主题预览体系，改动即持久化，下次启动生效）
+  const [startupWindow, setStartupWindow] = useState<AppSettings["startupWindow"]>(null);
+  // 通用设置：界面字体缩放（null = 尚未加载）
+  const [fontScale, setFontScale] = useState<number | null>(null);
+  const fontScaleRef = useRef(1);
+  const fontScaleTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    void api
+      .settingsGet()
+      .then((s) => {
+        setStartupWindow(s.startupWindow ?? "fragment");
+        const scale = s.uiFontScale ?? 1;
+        fontScaleRef.current = scale;
+        setFontScale(scale);
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleStartupWindow = async (value: "main" | "fragment") => {
+    const prev = startupWindow;
+    setStartupWindow(value);
+    try {
+      await api.settingsSet({ startupWindow: value });
+      setMessage("已保存，下次启动时生效");
+    } catch (e) {
+      setStartupWindow(prev);
+      setMessage(`保存设置失败: ${String(e)}`);
+    }
+  };
+
+  const persistFontScale = useCallback((value: number) => {
+    void api
+      .settingsSet({ uiFontScale: value })
+      .catch((e) => setMessage(`保存字体大小失败: ${String(e)}`));
+  }, []);
+
+  // 拖动滑杆即时改本地显示，防抖落盘——settings_set 每次都写文件 + 全窗口广播，拖动过程太频繁会卡
+  const handleFontScale = (value: number) => {
+    fontScaleRef.current = value;
+    setFontScale(value);
+    if (fontScaleTimer.current !== null) window.clearTimeout(fontScaleTimer.current);
+    fontScaleTimer.current = window.setTimeout(() => {
+      fontScaleTimer.current = null;
+      persistFontScale(value);
+    }, 350);
+  };
+
+  // 卸载时补存未落盘的滑杆改动（拖完马上关窗口的场景）
+  useEffect(
+    () => () => {
+      if (fontScaleTimer.current !== null) {
+        window.clearTimeout(fontScaleTimer.current);
+        persistFontScale(fontScaleRef.current);
+      }
+    },
+    [persistFontScale]
+  );
 
   // 加载预设列表（每个预设取完整配置用于色块展示）
   const refreshPresets = useCallback(async () => {
@@ -172,7 +230,7 @@ export default function SettingsWindow() {
   return (
     <ModuleSurface module="settings" className="qj-settings">
       <header className="qj-settings-header">
-        <span className="qj-settings-title">主题设置</span>
+        <span className="qj-settings-title">设置</span>
         <span className="qj-settings-hint">预览在本窗口生效 · 应用后全局生效</span>
         <div className="qj-settings-actions">
           <button type="button" className="qj-btn" onClick={() => void handleReset()}>
@@ -381,6 +439,67 @@ export default function SettingsWindow() {
                 <p className="qj-settings-note">开启后各面板呈毛玻璃效果悬浮于壁纸之上。</p>
               </>
             )}
+          </section>
+
+          {/* 通用设置：与主题预览体系无关，改动即保存 */}
+          <section className="qj-settings-section">
+            <h3>通用设置</h3>
+            <div className="qj-control-row">
+              <span className="qj-control-label">启动时显示</span>
+              <div className="qj-control-value">
+                {(
+                  [
+                    ["fragment", "新增碎片"],
+                    ["main", "主界面"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <label key={value} className="qj-check">
+                    <input
+                      type="radio"
+                      name="startup-window"
+                      disabled={!startupWindow}
+                      checked={startupWindow === value}
+                      onChange={() => void handleStartupWindow(value)}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <p className="qj-settings-note">
+              默认启动先弹出碎片窗口，方便随手记录；点其右上角的房子图标可进入主界面（启动时这个碎片窗口会自动关闭）。
+              更改下次启动时生效。
+            </p>
+
+            <div className="qj-control-row" style={{ marginTop: 14 }}>
+              <span className="qj-control-label">界面字体大小</span>
+              <div className="qj-control-value">
+                <input
+                  type="range"
+                  min={85}
+                  max={150}
+                  step={5}
+                  disabled={fontScale === null}
+                  value={Math.round((fontScale ?? 1) * 100)}
+                  onChange={(e) => handleFontScale(Number(e.target.value) / 100)}
+                />
+                <span className="qj-control-num">
+                  {fontScale === null ? "…" : `${Math.round(fontScale * 100)}%`}
+                </span>
+                <button
+                  type="button"
+                  className="qj-btn"
+                  disabled={fontScale === null || fontScale === 1}
+                  onClick={() => handleFontScale(1)}
+                >
+                  标准
+                </button>
+              </div>
+            </div>
+            <p className="qj-settings-note">
+              放大缩小整个界面的文字与图标（85%–150%），所有窗口实时同步。编辑区内还可按住 Ctrl +
+              滚轮单独缩放正文视图（不影响实际字号，Ctrl+0 复位）。
+            </p>
           </section>
         </div>
 

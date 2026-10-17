@@ -20,6 +20,17 @@ export interface NoteRead {
   absPath: string;
 }
 
+// ---------- 通用设置（与 Rust commands/theme.rs 的 AppSettings 对齐） ----------
+
+export interface AppSettings {
+  autosaveDelayMs?: number | null;
+  defaultNotebook?: string | null;
+  /** 启动时显示的界面："main"（主界面）| "fragment"（新增碎片窗口，缺省值） */
+  startupWindow?: "main" | "fragment" | null;
+  /** 界面字体缩放（CSS zoom 倍率，1.0 = 标准，缺省值） */
+  uiFontScale?: number | null;
+}
+
 // ---------- 附件 ----------
 
 export type AttachmentBase =
@@ -90,6 +101,10 @@ export const api = {
   themeReset: () => invoke<void>("theme_reset"),
   themeImportBackground: (filePath: string) =>
     invoke<string>("theme_import_background", { filePath }),
+
+  // 通用设置（部分更新：仅传入需要修改的字段）
+  settingsGet: () => invoke<AppSettings>("settings_get"),
+  settingsSet: (partial: AppSettings) => invoke<void>("settings_set", { partial }),
 };
 
 // ---------- 主题类型（与 Rust theme/model.rs 对齐） ----------

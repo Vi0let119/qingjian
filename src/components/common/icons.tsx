@@ -110,3 +110,14 @@ export function IconSprout({ size = 13, className }: IconProps) {
     </svg>
   );
 }
+
+/** 小屋（碎片窗口 → 打开主界面） */
+export function IconHome({ size = 13, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M4.5 10.5 12 4l7.5 6.5" />
+      <path d="M6.5 9v11h11V9" />
+      <path d="M10 20v-5h4v5" />
+    </svg>
+  );
+}

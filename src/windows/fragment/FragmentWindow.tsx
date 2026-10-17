@@ -3,14 +3,56 @@
 // → 窗口关闭 → Rust 侧 Destroyed 钩子注销（空块删除 / 非空块保留）。
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { Effect, EffectState } from "@tauri-apps/api/window";
 import { api } from "../../lib/api";
 import { nowHM, todayStr } from "../../lib/dates";
 import { TipTapEditor, type SaveStatus } from "../../components/editor/TipTapEditor";
 import { useFragmentStore } from "../../stores/useFragmentStore";
+import { useThemeStore } from "../../stores/useThemeStore";
 import { ModuleSurface } from "../../components/theme/ModuleSurface";
 import { insertImageViaImport, relForDataUri } from "../../lib/dataUri";
-import { IconSprout } from "../../components/common/icons";
+import { IconHome, IconSprout } from "../../components/common/icons";
 import "./fragment.css";
+
+/** 打开主界面（已存在则显示并聚焦；被关闭过则按当前主题效果重建）。
+ * 启动引导的碎片窗口（fragment-boot）在主界面成功打开后关闭自己。
+ * 注意顺序：必须先让主窗口可见再关——Rust 侧"零可见窗口"守卫会把全隐状态判定为应用退出。 */
+async function openMainWindow() {
+  const isBoot = getCurrentWindow().label === "fragment-boot";
+  const existing = await WebviewWindow.getByLabel("main");
+  if (existing) {
+    await existing.unminimize().catch(() => {});
+    await existing.show();
+    await existing.setFocus();
+  } else {
+    const effect = useThemeStore.getState().config?.window.effect ?? "none";
+    const options: ConstructorParameters<typeof WebviewWindow>[1] = {
+      url: "index.html",
+      title: "轻笺",
+      width: 1100,
+      height: 720,
+      minWidth: 800,
+      minHeight: 560,
+      center: true,
+      transparent: effect !== "none",
+    };
+    if (effect === "mica" || effect === "acrylic") {
+      options.windowEffects = {
+        effects: [effect === "mica" ? Effect.Mica : Effect.Acrylic],
+        state: EffectState.Active,
+      };
+    }
+    const win = new WebviewWindow("main", options);
+    await new Promise<void>((resolve, reject) => {
+      void win.once("tauri://created", () => resolve());
+      void win.once("tauri://error", (e) => reject(new Error(String(e))));
+    });
+  }
+  if (isBoot) {
+    await getCurrentWindow().close();
+  }
+}
 
 export default function FragmentWindow() {
   const sectionId = useFragmentStore((s) => s.sectionId);
@@ -46,6 +88,9 @@ export default function FragmentWindow() {
     return <div className="qj-frag-error">正在接入当日记录…</div>;
   }
 
+  // 启动引导的碎片窗口：点"打开主界面"后会关闭自己（普通碎片窗口保持打开）
+  const isBootFragment = getCurrentWindow().label === "fragment-boot";
+
   return (
     <ModuleSurface module="fragment" className="qj-fragment">
       <header className="qj-frag-header">
@@ -58,11 +103,11 @@ export default function FragmentWindow() {
         </span>
         <button
           type="button"
-          className="qj-frag-close"
-          title="关闭（内容已自动保存到当日记录）"
-          onClick={() => void getCurrentWindow().close()}
+          className="qj-frag-open-main"
+          title={isBootFragment ? "打开主界面（本碎片窗口将关闭）" : "打开主界面"}
+          onClick={() => void openMainWindow()}
         >
-          ×
+          <IconHome size={16} />
         </button>
       </header>
       {pasteError && (

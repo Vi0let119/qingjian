@@ -17,6 +17,7 @@ import {
 } from "./extensions/markdown";
 import { MenuBar } from "./MenuBar";
 import { debounce } from "../../lib/debounce";
+import { useEditorZoomStore } from "../../stores/useEditorZoom";
 import "./editor.css";
 
 export type SaveStatus = "clean" | "dirty" | "saving" | "saved" | "error";
@@ -75,6 +76,22 @@ export function TipTapEditor({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   /** 载入阶段重写图片 src 时抑制 dirty/自动保存 */
   const suppressUpdate = useRef(false);
+
+  // 视图缩放（Ctrl+滚轮 / Ctrl+0）：只作用于编辑区内容，同一窗口内切标签共享
+  const zoom = useEditorZoomStore((s) => s.zoom);
+  const [zoomBadge, setZoomBadge] = useState(false);
+  const zoomBadgeTimer = useRef<number | null>(null);
+  const showZoomBadge = useCallback(() => {
+    setZoomBadge(true);
+    if (zoomBadgeTimer.current !== null) window.clearTimeout(zoomBadgeTimer.current);
+    zoomBadgeTimer.current = window.setTimeout(() => setZoomBadge(false), 900);
+  }, []);
+  useEffect(
+    () => () => {
+      if (zoomBadgeTimer.current !== null) window.clearTimeout(zoomBadgeTimer.current);
+    },
+    []
+  );
 
   // 以下 ref 转发避免 useEditor 闭包捕获旧值
   const onSaveRef = useRef(onSave);
@@ -251,6 +268,15 @@ export function TipTapEditor({
     const el = scrollRef.current;
     if (!el || !editor) return;
     const onWheel = (e: WheelEvent) => {
+      // Ctrl+滚轮：编辑器视图缩放；preventDefault 拦下 WebView2 默认的整页缩放
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const z = useEditorZoomStore.getState();
+        if (e.deltaY < 0) z.zoomIn();
+        else if (e.deltaY > 0) z.zoomOut();
+        showZoomBadge();
+        return;
+      }
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1;
       const dy = e.deltaY * unit;
       const canDown = dy > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 1;
@@ -260,7 +286,16 @@ export function TipTapEditor({
         e.preventDefault();
       }
     };
+    // Ctrl+0：复位视图缩放（焦点在编辑区内时生效）
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && !e.altKey && (e.key === "0" || e.code === "Digit0" || e.code === "Numpad0")) {
+        e.preventDefault();
+        useEditorZoomStore.getState().reset();
+        showZoomBadge();
+      }
+    };
     el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("keydown", onKeyDown);
 
     // 中键按住拖动滚动（autoscroll，Chromium/WebView2 不支持原生实现）
     let autoScroll = false;
@@ -288,11 +323,12 @@ export function TipTapEditor({
 
     return () => {
       el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("keydown", onKeyDown);
       el.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [editor]);
+  }, [editor, showZoomBadge]);
 
   // 载入后把图片 src 从 md 相对路径换成 data URI（重写事务不触发 dirty）。
   // 映射可为异步（相对路径 → Rust 读字节 → data URI），全部完成后一次性重写。
@@ -355,8 +391,13 @@ export function TipTapEditor({
       {!readonly && (
         <MenuBar editor={editor} compact={compact} onInsertImage={onInsertImage ? insertImage : undefined} />
       )}
-      <div className="qj-editor-scroll" ref={scrollRef}>
+      {/* zoom 放在滚动容器上（而非内层包裹）：.qj-editor-content 的 min-height:100%
+          依赖直接父级，包一层会破坏空文档时的稿纸纹理全高填充 */}
+      <div className="qj-editor-scroll" ref={scrollRef} style={{ zoom }}>
         <EditorContent editor={editor} />
+      </div>
+      <div className={`qj-zoom-badge${zoomBadge ? " is-visible" : ""}`}>
+        {Math.round(zoom * 100)}%
       </div>
       <div className={`qj-save-indicator qj-save-${status}`} title="保存状态">
         {status === "saved" ? "已保存" : status === "saving" ? "保存中…" : status === "error" ? "保存失败" : ""}

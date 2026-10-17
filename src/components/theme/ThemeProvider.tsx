@@ -2,7 +2,7 @@
 // （设置窗口点"应用"后，所有窗口 200ms 内即时换肤）。
 import { useEffect, useState, type ReactNode } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { api, type ThemeConfig } from "../../lib/api";
+import { api, type AppSettings, type ThemeConfig } from "../../lib/api";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { mixHex } from "../../lib/contrast";
 import { absToDataUri } from "../../lib/dataUri";
@@ -94,6 +94,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       unlisten?.();
     };
   }, [setConfig]);
+
+  // 界面字体缩放（通用设置）：html 级 CSS zoom，各窗口加载时读取，
+  // 设置窗口改动后经 settings://changed 广播即时同步
+  const [fontScale, setFontScale] = useState(1);
+  useEffect(() => {
+    let disposed = false;
+    void api
+      .settingsGet()
+      .then((s) => {
+        if (!disposed) setFontScale(s.uiFontScale ?? 1);
+      })
+      .catch(() => {});
+    let unlisten: (() => void) | null = null;
+    void listen<AppSettings>("settings://changed", (e) => {
+      setFontScale(e.payload.uiFontScale ?? 1);
+    }).then((un) => {
+      if (disposed) un();
+      else unlisten = un;
+    });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.style.zoom = String(fontScale);
+  }, [fontScale]);
 
   // 写入 :root 变量
   useEffect(() => {

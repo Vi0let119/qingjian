@@ -2,6 +2,28 @@
 
 > 完整实现计划见 [plan.md](./plan.md)。本文件记录**已完成/进行中/下一步**，供后续会话续接。
 
+## 当前状态（2026-10-02，界面字体缩放 + 编辑器视图缩放）
+
+**✅ 通用设置第二项：界面字体大小 + 编辑器 Ctrl+滚轮视图缩放**：
+- `AppSettings` 加 `uiFontScale`（CSS zoom 倍率）；`settings_set` 落盘后广播 `settings://changed`（Rust 端 Emitter，参照 theme://changed 模式）
+- `ThemeProvider` 加载/监听该设置，应用到 `documentElement.style.zoom` —— 三个窗口共用 ThemeProvider，改一次全窗口即时同步
+- 设置窗口"通用设置"加滑杆（85%–150%，步进 5%，"标准"复位）；本地即时显示 + 350ms 防抖落盘 + 卸载 flush（settings_set 每次写文件+广播，拖动不能逐格落盘）
+- 编辑器视图缩放：`useEditorZoomStore`（窗口级 zustand，切标签共享，50%–200% 步进 10%）；TipTapEditor 滚轮监听加 ctrlKey 分支（preventDefault 拦 WebView2 整页缩放）+ Ctrl+0 复位 + 底部居中百分比徽标（900ms 淡出）
+- **坑**：编辑器 zoom 必须放在 `.qj-editor-scroll`（滚动容器）本身，不能加中间包裹层——`.qj-editor-content` 的 `min-height:100%` 依赖直接父级，包一层空文档会丢稿纸纹理全高填充
+- 测试：前端 40/40（+4 缩放用例）+ Rust 40/40 + tsc/vite 干净
+
+## 当前状态（2026-10-01，启动界面可配置）
+
+**✅ 启动默认"新增碎片"窗口 + 通用设置首项落地**：
+- 启动行为：tauri.conf.json 主窗口改 `visible: false`；lib.rs setup 读 `settings.json` 的 `startupWindow`（缺省 `fragment`）——`fragment` 时 Rust 侧 `WebviewWindowBuilder` 建 label `fragment-boot` 碎片窗口（380×320，fragment.html），主窗口保持隐藏；`main` 时 `show()+set_focus()`，行为同旧版
+- 碎片窗口 header 新增"房子"按钮 → 打开主界面：`getByLabel("main")` 存在则 `unminimize+show+setFocus`，被关过则按当前主题效果重建（复用 Sidebar.openSettingsWindow 模式，1100×720）；碎片窗口保持打开
+- 设置窗口新增"通用设置"区（左列，非主题预览体系，改动即存）：启动时显示 新增碎片/主界面；走预留的 `settings_get/settings_set`（AppSettings 加 `startupWindow` 字段，合并逻辑抽 `merge_settings` + 单测）
+- 僵尸进程守卫：lib.rs Destroyed 钩子末尾加"零可见窗口即 `exit(0)`"（隐藏主窗口不算存活），碎片模式下关掉碎片不会残留进程
+- capabilities 新增 `core:window:allow-show` / `core:window:allow-unminimize`
+- **后续调整（10-02）**：`fragment-boot` 点"打开主界面"后自动关闭自己（普通碎片窗口仍保持打开）。顺序关键：必须先 show 主窗口再 close——守卫会把"全隐状态"判为退出；运行时验证 `destroyed=fragment-boot, any_visible=true → 存活`。守卫处留了 `#[cfg(debug_assertions)]` 的 [qj-debug] 日志（dev 构建可见，release 无）
+- **坑**：项目目录从 `Project/标签` 重命名后，`target/` 缓存内嵌旧绝对路径导致 build script 失败（`failed to read plugin permissions ... 标签\...`）——`cargo clean` 后恢复
+- 测试：前端 36/36 + Rust 40/40（含新增 2 例）+ tsc/vite 构建干净；运行时冒烟验证两种启动模式与守卫退出均正常（tauri dev 首跑闪退为 vite 冷启动竞态，非逻辑问题）
+
 ## 当前状态（2026-08-23，第五轮功能完成）
 
 **✅ 图片灵感主题 + 全窗口背景图功能验收完成**：

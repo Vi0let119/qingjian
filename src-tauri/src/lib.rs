@@ -35,6 +35,32 @@ pub fn run() {
                 }
             }
             // JS 创建的碎片/设置窗口在创建时由前端按主题传 windowEffects
+
+            // 按通用设置决定启动界面：主界面 或 新增碎片窗口（缺省 → 碎片窗口）
+            let settings = commands::theme::settings_get().unwrap_or_default();
+            let main = app
+                .get_webview_window("main")
+                .expect("tauri.conf.json 必须声明 main 窗口");
+            if settings.startup_window.as_deref() == Some("main") {
+                main.show().map_err(|e| std::io::Error::other(e))?;
+                let _ = main.set_focus();
+            } else {
+                // 主窗口保持隐藏（前端"进入主界面"按钮负责 show），启动一个碎片窗口
+                let frag = tauri::WebviewWindowBuilder::new(
+                    app,
+                    "fragment-boot",
+                    tauri::WebviewUrl::App("fragment.html".into()),
+                )
+                .title("新增碎片")
+                .inner_size(380.0, 320.0)
+                .min_inner_size(300.0, 200.0)
+                .center()
+                .build()
+                .map_err(|e| std::io::Error::other(format!("创建启动碎片窗口失败: {e}")))?;
+                if let Err(e) = theme::apply_window_effect(&frag, &effect) {
+                    eprintln!("[qj] 启动碎片窗口应用主题效果失败（回退纯色）: {e}");
+                }
+            }
             Ok(())
         })
         // 全局窗口事件钩子（对所有窗口生效，含 JS 创建）：
@@ -48,6 +74,25 @@ pub fn run() {
                     eprintln!("[qj] 注销碎片会话失败 ({label}): {e}");
                 } else {
                     commands::daily::broadcast_daily_changed(handle);
+                }
+                // 零可见窗口守卫：隐藏主窗口（碎片启动模式）不算存活窗口，
+                // 否则关掉碎片后进程残留、无任何界面可回到
+                let any_visible = handle
+                    .webview_windows()
+                    .iter()
+                    .filter(|(l, _)| l.as_str() != label)
+                    .any(|(_, w)| w.is_visible().unwrap_or(false));
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "[qj-debug] destroyed={label}, any_visible={any_visible}, all={:?}",
+                    handle
+                        .webview_windows()
+                        .iter()
+                        .map(|(l, w)| (l.clone(), w.is_visible()))
+                        .collect::<Vec<_>>()
+                );
+                if !any_visible {
+                    handle.exit(0);
                 }
             }
         })

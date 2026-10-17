@@ -85,14 +85,12 @@
   color: var(--qj-danger);
 }
 
-.qj-frag-close {
+.qj-frag-open-main {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 15px;
-  line-height: 1;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -101,12 +99,12 @@
   transition: background 0.15s ease, color 0.15s ease, transform 0.12s var(--qj-ease);
 }
 
-.qj-frag-close:hover {
+.qj-frag-open-main:hover {
   background: var(--qj-primary-soft);
-  color: var(--qj-danger);
+  color: var(--qj-primary);
 }
 
-.qj-frag-close:active {
+.qj-frag-open-main:active {
   transform: scale(0.9);
 }
 
