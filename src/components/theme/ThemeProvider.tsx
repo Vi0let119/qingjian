@@ -7,6 +7,7 @@ import { useThemeStore } from "../../stores/useThemeStore";
 import { mixHex } from "../../lib/contrast";
 import { absToDataUri } from "../../lib/dataUri";
 import { bodyFontSize } from "../../lib/fontScale";
+import { bubblePalette } from "../../lib/themePalette";
 
 /** tokens → CSS 变量映射 */
 const TOKEN_VARS: Record<string, (c: ThemeConfig) => string> = {
@@ -31,6 +32,39 @@ const TOKEN_VARS: Record<string, (c: ThemeConfig) => string> = {
     const tint2 = mixHex(bg, surface, 0.55);
     return `linear-gradient(168deg, ${bg} 0%, ${tint1} 34%, ${tint2} 70%, ${bg} 100%)`;
   },
+
+  // ---------- v3：纸页色阶改为从主题推导（原先写死浅色，换深色主题就"花"）----------
+  // 叠放顺序：桌面(最暗) → 书写纸 → 列表 → 侧栏(最亮)；深色主题反转为越上层略亮。
+  "--qj-desk": (c) => bubblePalette(c).desk,
+  "--qj-paper-0": (c) => {
+    const { bg, primary } = c.tokens.color;
+    return mixHex(bg, primary, c.base === "dark" ? 0.05 : 0.015);
+  },
+  "--qj-paper-1": (c) => {
+    const { bg, surface } = c.tokens.color;
+    return mixHex(bg, surface, c.base === "dark" ? 0.5 : 0.45);
+  },
+  "--qj-paper-2": (c) => c.tokens.color.surface,
+
+  // ---------- v3：墨色阶也从主题推导 ----------
+  // 原来 ink-100..900 是写死的灰绿阶；深色主题下必须反转，否则文字浮在错误的明度上。
+  "--qj-ink-100": (c) => mixHex(c.tokens.color.bg, c.tokens.color.text, 0.06),
+  "--qj-ink-200": (c) => mixHex(c.tokens.color.bg, c.tokens.color.text, 0.12),
+  "--qj-ink-300": (c) => mixHex(c.tokens.color.bg, c.tokens.color.text, 0.22),
+  "--qj-ink-400": (c) => mixHex(c.tokens.color.bg, c.tokens.color.text, c.base === "dark" ? 0.34 : 0.42),
+  "--qj-ink-500": (c) => mixHex(c.tokens.color.bg, c.tokens.color.text, 0.55),
+  "--qj-ink-600": (c) => c.tokens.color.textSecondary,
+  "--qj-ink-700": (c) => mixHex(c.tokens.color.textSecondary, c.tokens.color.text, 0.45),
+  "--qj-ink-800": (c) => mixHex(c.tokens.color.textSecondary, c.tokens.color.text, 0.8),
+  "--qj-ink-900": (c) => c.tokens.color.text,
+
+  // ---------- v3：气泡视图色板 ----------
+  "--qj-glow-rgb": (c) => bubblePalette(c).glow,
+  "--qj-bubble": (c) => bubblePalette(c).bubble,
+  "--qj-bubble-edge": (c) => bubblePalette(c).bubbleEdge,
+  "--qj-ripple": (c) => bubblePalette(c).ripple,
+  "--qj-canvas-ink": (c) => bubblePalette(c).ink,
+  "--qj-canvas-ink-dim": (c) => bubblePalette(c).inkDim,
 };
 
 /** #rrggbb → 12% 透明度 rgba（激活底等淡色） */
@@ -133,6 +167,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!cfg) return;
     const root = document.documentElement;
+    // 供 Canvas 等非 CSS 渲染层判断明暗（涟漪高光强度、阴影方向）
+    root.dataset.base = cfg.base;
     for (const [varName, getter] of Object.entries(TOKEN_VARS)) {
       root.style.setProperty(varName, getter(cfg));
     }

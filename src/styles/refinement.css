@@ -22,18 +22,20 @@
   --qj-sp-4: 16px;
   --qj-sp-5: 24px;
 
-  /* ---- 边框：发丝线，比原来的 0.25 透明度更轻，靠阴影补层次 ---- */
-  --qj-hairline: rgba(74, 124, 89, 0.14);
-  --qj-hairline-strong: rgba(74, 124, 89, 0.24);
+  /* ---- 边框：发丝线从主题墨色派生，深色主题下自动变亮 ---- */
+  --qj-hairline: color-mix(in srgb, var(--qj-text) 12%, transparent);
+  --qj-hairline-strong: color-mix(in srgb, var(--qj-text) 22%, transparent);
 
-  /* ---- 阴影两级：静置 / 浮起 ---- */
-  --qj-shadow-rest: 0 1px 2px rgba(43, 43, 40, 0.04);
-  --qj-shadow-lift: 0 4px 16px rgba(43, 43, 40, 0.07), 0 1px 3px rgba(43, 43, 40, 0.04);
+  /* ---- 阴影两级：静置 / 浮起（用墨色派生，避免在深色底上发灰） ---- */
+  --qj-shadow-rest: 0 1px 2px color-mix(in srgb, var(--qj-text) 6%, transparent);
+  --qj-shadow-lift:
+    0 4px 16px color-mix(in srgb, var(--qj-text) 10%, transparent),
+    0 1px 3px color-mix(in srgb, var(--qj-text) 6%, transparent);
 
-  /* ---- 文字层级：主/次/弱三档，不再靠 opacity 随手压 ---- */
+  /* ---- 文字层级：主/次/弱三档 ---- */
   --qj-ink-1: var(--qj-text);
   --qj-ink-2: var(--qj-text-secondary);
-  --qj-ink-3: rgba(107, 107, 99, 0.62);
+  --qj-ink-3: color-mix(in srgb, var(--qj-text-secondary) 72%, transparent);
 
   /* ---- 交互反馈时长 ---- */
   --qj-t-fast: 0.14s;

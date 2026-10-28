@@ -56,6 +56,25 @@ pub struct ColorTokens {
     pub text: String,
     pub text_secondary: String,
     pub border: String,
+
+    // ---------- v3「气泡视图」扩展色板 ----------
+    // 全部可选：旧的自定义主题缺这些字段时由前端按 primary/bg 推导兜底，
+    // 保证老配置仍然可用（见 lib/themePalette.ts 的派生逻辑）。
+    /// 桌面底色（气泡画布最底层）
+    #[serde(default)]
+    pub desk: Option<String>,
+    /// 画布上的柔光斑：RGB 形式 "r,g,b"，用于气泡 backdrop-filter 的透出层
+    #[serde(default)]
+    pub glow: Option<String>,
+    /// 气泡主色（通常比 primary 更淡）
+    #[serde(default)]
+    pub bubble: Option<String>,
+    /// 气泡描边/高光色
+    #[serde(default)]
+    pub bubble_edge: Option<String>,
+    /// 涟漪色
+    #[serde(default)]
+    pub ripple: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -164,6 +183,11 @@ mod tests {
                     text: "#2b2b28".into(),
                     text_secondary: "#6b6b63".into(),
                     border: "rgba(74,124,89,0.25)".into(),
+                    desk: None,
+                    glow: None,
+                    bubble: None,
+                    bubble_edge: None,
+                    ripple: None,
                 },
                 font: FontTokens {
                     family: "Segoe UI".into(),

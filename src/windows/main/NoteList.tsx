@@ -169,7 +169,7 @@ export function NoteList() {
             return (
               <div
                 key={`hit-${item.hit.fileName}`}
-                className="qj-note-item qj-note-hit"
+                className="qj-note-item qj-note-hit qj-ink-bar"
                 onMouseDown={() => {
                   const nb = activeNotebook!;
                   openNote(nb, item.hit!.fileName);
@@ -198,7 +198,7 @@ export function NoteList() {
           return (
             <div
               key={note.fileName}
-              className={`qj-note-item${tabId === activeTabId ? " is-active" : ""}`}
+              className={`qj-note-item qj-ink-bar${tabId === activeTabId ? " is-active" : ""}`}
               onMouseDown={() => openNote(activeNotebook!, note.fileName)}
             >
               {editingFile === note.fileName ? (

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Effect, EffectState } from "@tauri-apps/api/window";
 import { nowHM } from "../lib/dates";
+import { applyWindowIcon } from "../lib/windowIcon";
 import { useThemeStore } from "./useThemeStore";
 
 interface FragmentStore {
@@ -60,6 +61,8 @@ export const useFragmentStore = create<FragmentStore>((set) => ({
         void win.once("tauri://created", () => resolve());
         void win.once("tauri://error", (e) => reject(new Error(String(e))));
       });
+      // JS 创建的窗口不继承应用图标，必须手动设置（否则任务栏是空白方块）
+      await applyWindowIcon(win);
       set({ error: null });
     } catch (e) {
       set({ error: String(e) });

@@ -10,7 +10,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--qj-surface);
+  /* v2：小窗是悬在桌面上的一张纸（最亮那档） */
+  background: var(--qj-paper-2);
   color: var(--qj-text);
   overflow: hidden;
 }
@@ -57,12 +58,16 @@
 }
 
 /* 时间：比标题轻一档，作为次要信息 */
+/* 时间做成"胶囊"而不是裸文字：小元素也能提供精致度 */
 .qj-frag-time {
-  margin-left: 2px;
-  font-size: 0.78rem;
-  color: var(--qj-ink-3);
+  padding: 2px 8px;
+  border-radius: var(--qj-r-full);
+  background: var(--qj-ink-100);
+  font-size: 0.72rem;
+  color: var(--qj-ink-600);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
 }
 
 .qj-frag-status {

@@ -1,0 +1,312 @@
+/* ============================================================
+   气泡视图（v3 · 透明玻璃质感）
+
+   设计意图：气泡是一颗"悬在数码磨砂画布上的透明玻璃珠"。
+   - 立体感来自三层叠加：外投影（离画布远近）→ backdrop-filter（透出背后光斑）
+     → 镜面高光 + 内阴影（玻璃厚度）
+   - 颜色全部来自主题变量（--qj-bubble / --qj-bubble-edge / --qj-glow-rgb），
+     不写死色相，任何主题下都成立
+   ============================================================ */
+
+.qj-bubble-canvas {
+  /* 铺满整个工作区：此前是 height:100%，被面包屑占掉高度后，
+     顶部会露出一条 body 的纸色渐变（就是那条"灰白条"） */
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  /* 数码磨砂底：主题桌面色 + 柔光斑（气泡 backdrop-filter 透出的就是这层光）+ 噪点 */
+  background-color: var(--qj-desk);
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(var(--qj-glow-rgb), 0.3), transparent 42%),
+    radial-gradient(circle at 82% 78%, rgba(var(--qj-glow-rgb), 0.22), transparent 46%),
+    radial-gradient(circle at 62% 22%, rgba(var(--qj-glow-rgb), 0.12), transparent 38%),
+    var(--qj-fiber);
+  touch-action: none;
+  user-select: none;
+}
+
+.qj-bubble-canvas:active {
+  cursor: grabbing;
+}
+
+/* 舞台：滚轮缩放 + 拖拽平移都作用在这层的 transform 上 */
+.qj-bubble-stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  transition: transform 0.08s linear;
+}
+
+/* ---------- 气泡本体 ---------- */
+
+.qj-bubble {
+  position: absolute;
+  /* 视觉放大：布局按不重叠的保守直径定位，这里把视觉尺寸放大到 1.3 倍 */
+  --qj-bubble-scale: 1.3;
+  transform: translate(-50%, -50%) scale(var(--qj-bubble-scale));
+  /* 显式 box-sizing + 固定宽高：全局 box-sizing 与 padding 百分比会让
+     width/height 不再是真实直径，导致气泡互相重叠、跑出画布 */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px;
+  overflow: hidden;
+  border: none;
+  /* 有机形变：相邻半径之和 = 100% 时四角融合成一条光滑曲线。
+     随手写的数字（如 62% 38% 41% 59%）会退化成椭圆，必须成对互补 */
+  border-radius: 62% 38% 41% 59% / 44% 56% 44% 56%;
+  cursor: pointer;
+  text-align: center;
+  color: var(--qj-canvas-ink);
+
+  /* 磨砂玻璃：内部是均匀的雾面，不靠渐变堆立体感。
+     （早先那版"菲涅尔 + 内部大块白高光"在满尺寸下读起来像硬塑料球，
+     反而是缩到最小时的简版更好看——这里是那个简版的完整版） */
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--qj-bubble) 0%,
+    var(--qj-bubble) 62%,
+    var(--qj-bubble-edge) 100%
+  );
+
+  /* 雾面靠模糊度做，不靠提亮：糊到背景只剩色块，气泡才有"磨砂"而非"反光" */
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(18px) saturate(1.35);
+
+  box-shadow:
+    /* 清晰的一圈外轮廓：这是分割气泡与背景的唯一硬元素 */
+    inset 0 0 0 1px var(--qj-bubble-edge),
+    /* 顶部微光：只提边，不铺面 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    /* 底部反光：轻，只为把气泡从画布上托起来 */
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
+    /* 接触阴影 + 悬浮投影 */
+    0 2px 4px -2px rgba(0, 0, 0, 0.16),
+    0 18px 34px -16px rgba(0, 0, 0, 0.34);
+  /* 入场浮起 + 常驻呼吸。两条动画分开写，呼吸在入场结束后才接手，
+     否则会互相覆盖。--qj-i 让每个气泡相位错开，不同步呼吸 */
+  animation:
+    qj-bubble-pop 0.56s var(--qj-ease-spring) both,
+    qj-bubble-breathe 9s ease-in-out infinite;
+  animation-delay:
+    calc(var(--qj-i, 0) * 42ms),
+    calc(var(--qj-i, 0) * -1.7s);
+  transition:
+    transform 0.34s var(--qj-ease-out),
+    box-shadow 0.34s var(--qj-ease-out),
+    background 0.34s var(--qj-ease-out);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+/* 极轻的边缘光晕：只在顶部和底部压一点点亮，勾出弧度。
+   不再有"内部大块高光"——那一块是塑料球的标志。
+   两者铺满整块并 inherit 父层曲线：写成固定 50% 圆角时，
+   父层是不规则形，动画中膜和底色会各走一条曲线 → "裂开" */
+.qj-bubble::before,
+.qj-bubble::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+}
+.qj-bubble::before {
+  background: radial-gradient(
+    ellipse 62% 26% at 50% 8%,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+.qj-bubble::after {
+  background: radial-gradient(
+    ellipse 56% 20% at 50% 94%,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+/* 有机呼吸：四个相位都是不对称 blob，相邻半径成对互补 */
+@keyframes qj-bubble-breathe {
+  0%,
+  100% { border-radius: 62% 38% 41% 59% / 44% 56% 44% 56%; }
+  25% { border-radius: 38% 62% 59% 41% / 56% 44% 56% 44%; }
+  50% { border-radius: 55% 45% 38% 62% / 38% 62% 38% 62%; }
+  75% { border-radius: 45% 55% 62% 38% / 62% 38% 62% 38%; }
+}
+
+@keyframes qj-bubble-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(calc(var(--qj-bubble-scale) * 0.55));
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(var(--qj-bubble-scale));
+    filter: blur(0);
+  }
+}
+
+/* 悬停 = "被选中"：抬起 + 变亮 + 呼吸提速到 2 倍（9s → 4.5s）
+   只改 animation-duration 会连入场动画一起改，所以按名字单独覆盖 */
+.qj-bubble:hover {
+  transform: translate(-50%, -50%) translateY(-10px) scale(calc(var(--qj-bubble-scale) * 1.07));
+  animation-duration: 0.56s, 4.5s;
+  filter: saturate(1.12) brightness(1.02);
+  box-shadow:
+    /* 悬停只加强轮廓与上沿光，保持磨砂调性，不切回反光球 */
+    inset 0 0 0 1.5px color-mix(in srgb, var(--qj-bubble-edge) 78%, var(--qj-primary)),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.2),
+    0 8px 14px -6px rgba(0, 0, 0, 0.2),
+    0 34px 60px -20px rgba(0, 0, 0, 0.44),
+    0 0 0 8px rgba(var(--qj-glow-rgb), 0.07);
+  z-index: 2;
+}
+
+/* 按下：向内收，玻璃被压了一下 */
+.qj-bubble:active {
+  transform: translate(-50%, -50%) scale(calc(var(--qj-bubble-scale) * 0.96));
+  transition-duration: 0.1s;
+}
+
+.qj-bubble:focus-visible {
+  outline: 2px solid var(--qj-primary);
+  outline-offset: 4px;
+}
+
+.qj-bubble-title {
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.28;
+  letter-spacing: 0.02em;
+  /* 玻璃球上的文字：加一层与主题纸色的柔光底，保证任何主题下都读得清 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  /* 不加底色、不加 backdrop-filter：球体上再叠一层"小玻璃牌"会破坏材质统一，
+     而且嵌套的 backdrop-filter 在 WebView2 里会渲染成不透明矩形，把字糊住。
+     可读性交给字色 + 暗投影保证 */
+  position: relative;
+  z-index: 2;
+  padding: 0 2px;
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--qj-canvas-ink) 26%, transparent),
+    0 0 10px color-mix(in srgb, var(--qj-canvas-ink) 10%, transparent);
+}
+
+.qj-bubble.is-ghost .qj-bubble-title {
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--qj-canvas-ink) 18%, transparent);
+}
+
+/* ---------- 空气泡（无笔记 / 新建入口） ---------- */
+
+/* 空气泡：结构与实心气泡一致（同样的菲涅尔边缘），只是不铺主题染色。
+   靠"没有实心填充"区分，不靠加粗描边——加粗会让它像另一类控件 */
+.qj-bubble.is-ghost {
+  /* 同一套磨砂结构，只是不铺主题染色，靠"没有填充"区分 */
+  background: linear-gradient(
+    color-mix(in srgb, var(--qj-bubble) 42%, transparent),
+    color-mix(in srgb, var(--qj-bubble) 42%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 1px var(--qj-bubble-edge),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 4px -2px rgba(0, 0, 0, 0.14),
+    0 12px 24px -14px rgba(0, 0, 0, 0.26);
+  color: var(--qj-canvas-ink-dim);
+}
+
+.qj-bubble.is-ghost:hover {
+  background: linear-gradient(
+    color-mix(in srgb, var(--qj-bubble) 62%, transparent),
+    color-mix(in srgb, var(--qj-bubble) 62%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 1.5px var(--qj-primary),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 8px 16px -8px rgba(0, 0, 0, 0.22),
+    0 28px 48px -18px rgba(0, 0, 0, 0.34);
+  color: var(--qj-primary);
+}
+
+/* ---------- 缩放降级：缩得太小关掉精致细节，避免糊成一团 ---------- */
+
+.qj-bubble-canvas[data-zoomed="far"] .qj-bubble {
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+}
+
+.qj-bubble-canvas[data-zoomed="tiny"] .qj-bubble {
+  /* 主材质已是磨砂，tiny 只需省掉模糊开销 + 停呼吸（小尺寸下位移放大像抖动） */
+  background: radial-gradient(circle at 50% 50%, var(--qj-bubble) 0%, var(--qj-bubble-edge) 100%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: inset 0 0 0 1px var(--qj-bubble-edge);
+  animation: none;
+}
+
+.qj-bubble-canvas[data-zoomed="tiny"] .qj-bubble::before,
+.qj-bubble-canvas[data-zoomed="tiny"] .qj-bubble::after,
+.qj-bubble-canvas[data-zoomed="far"] .qj-bubble::before,
+.qj-bubble-canvas[data-zoomed="far"] .qj-bubble::after {
+  display: none;
+}
+
+.qj-bubble-canvas[data-zoomed="tiny"] .qj-bubble-title {
+  text-shadow: none;
+}
+
+/* ---------- 涟漪画布层（Canvas 像素级波纹） ---------- */
+
+.qj-ripple-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ---------- 空状态 ---------- */
+
+.qj-bubble-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--qj-canvas-ink-dim);
+  font-size: 0.86rem;
+  pointer-events: none;
+  text-align: center;
+  padding: 24px;
+}
+
+/* ---------- 减少动态 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .qj-bubble {
+    animation: none;
+    border-radius: 62% 38% 41% 59% / 44% 56% 44% 56%;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .qj-bubble:hover {
+    transform: translate(-50%, -50%) scale(var(--qj-bubble-scale));
+  }
+  .qj-bubble-stage {
+    transition: none;
+  }
+}

@@ -2,7 +2,7 @@
 import { useCallback } from "react";
 import type { Editor } from "@tiptap/core";
 import { FONT_SIZE_LEVELS, type FontSizeLevel } from "./extensions/fontSize";
-import { IconImage } from "../common/icons";
+import { IconBold, IconImage, IconItalic, IconUnderline } from "../common/icons";
 
 export interface MenuBarProps {
   editor: Editor;
@@ -33,36 +33,42 @@ export function MenuBar({ editor, compact = false, onInsertImage }: MenuBarProps
     <div className={`qj-menubar${compact ? " qj-menubar-compact" : ""}`}>
       <button
         type="button"
-        className={`qj-menubar-btn qj-menubar-b${isActive("bold") ? " is-active" : ""}`}
+        className={`qj-menubar-btn${isActive("bold") ? " is-active" : ""}`}
         title="加粗 (Ctrl+B)"
+        aria-label="加粗"
+        aria-pressed={isActive("bold")}
         onMouseDown={(e) => {
           e.preventDefault();
           editor.chain().focus().toggleBold().run();
         }}
       >
-        B
+        <IconBold />
       </button>
       <button
         type="button"
-        className={`qj-menubar-btn qj-menubar-i${isActive("italic") ? " is-active" : ""}`}
+        className={`qj-menubar-btn${isActive("italic") ? " is-active" : ""}`}
         title="斜体 (Ctrl+I)"
+        aria-label="斜体"
+        aria-pressed={isActive("italic")}
         onMouseDown={(e) => {
           e.preventDefault();
           editor.chain().focus().toggleItalic().run();
         }}
       >
-        I
+        <IconItalic />
       </button>
       <button
         type="button"
-        className={`qj-menubar-btn qj-menubar-u${isActive("underline") ? " is-active" : ""}`}
+        className={`qj-menubar-btn${isActive("underline") ? " is-active" : ""}`}
         title="下划线 (Ctrl+U)"
+        aria-label="下划线"
+        aria-pressed={isActive("underline")}
         onMouseDown={(e) => {
           e.preventDefault();
           editor.chain().focus().toggleUnderline().run();
         }}
       >
-        U
+        <IconUnderline />
       </button>
 
       {!compact && (
@@ -91,8 +97,9 @@ export function MenuBar({ editor, compact = false, onInsertImage }: MenuBarProps
       {onInsertImage && (
         <button
           type="button"
-          className="qj-menubar-btn qj-menubar-img"
+          className="qj-menubar-btn"
           title="插入图片"
+          aria-label="插入图片"
           onMouseDown={(e) => {
             e.preventDefault();
             onInsertImage();

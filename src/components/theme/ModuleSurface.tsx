@@ -131,21 +131,26 @@ export function ModuleSurface({ module, className, style, children }: ModuleSurf
     ? hexToRgba(solidColor ?? cfg.tokens.color.surface, 0.6)
     : undefined;
 
+  // v2「纸页」：模块没有自定义背景（无纯色、无背景图、非毛玻璃）时不写内联背景，
+  // 让 CSS 的纸页色阶（.qj-sidebar/.qj-note-list/.qj-tabs-root）生效。
+  // 之前无条件写 tokens.color.surface，导致三栏被同一块白色盖平，叠层完全消失。
+  const useThemeSurface = frosted || !!solidColor || hasImage;
+
   return (
     <div
       className={`qj-module ${className ?? ""}${frosted ? " qj-module-frosted" : ""}`}
       data-has-image={!frosted && hasImage ? "true" : undefined}
       style={{
         ...style,
-        // solidColor 覆盖为纯色；背景图透明（图层接管）；否则走窗口渐变（CSS 规则）；
+        // solidColor 覆盖为纯色；背景图透明（图层接管）；否则交给 CSS 纸页色阶；
         // 毛玻璃模式下背景为对应色的 60% 半透明（壁纸清晰可见）
-        ...(frostedBg
-          ? { background: frostedBg }
-          : solidColor
-            ? { background: solidColor }
-            : hasImage
-              ? { background: "transparent" }
-              : {}),
+        ...(useThemeSurface
+          ? frostedBg
+            ? { background: frostedBg }
+            : solidColor
+              ? { background: solidColor }
+              : { background: "transparent" }
+          : {}),
         ...(vars as CSSProperties),
       }}
     >

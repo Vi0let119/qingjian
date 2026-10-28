@@ -92,6 +92,44 @@ export function IconImage({ size = 14, className }: IconProps) {
   );
 }
 
+/** 加粗：替代字形 B（字形在不同系统里渲染不一致，显廉价） */
+export function IconBold({ size = 15, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M7.5 4.5h6a4 4 0 0 1 0 8h-6z" />
+      <path d="M7.5 12.5h6.8a4 4 0 0 1 0 8H7.5z" />
+    </svg>
+  );
+}
+
+/** 斜体 */
+export function IconItalic({ size = 15, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M10 4.5h8M6 19.5h8M14.5 4.5l-5 15" />
+    </svg>
+  );
+}
+
+/** 下划线 */
+export function IconUnderline({ size = 15, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M7 4.5v7a5 5 0 0 0 10 0v-7" />
+      <path d="M5.5 20h13" />
+    </svg>
+  );
+}
+
+/** 左尖角（返回上层） */
+export function IconChevronLeft({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M14.5 5.5L8 12l6.5 6.5" />
+    </svg>
+  );
+}
+
 /** 加号（新建） */
 export function IconPlus({ size = 15, className }: IconProps) {
   return (

@@ -1,11 +1,9 @@
 // 左侧导航栏：应用头 + 笔记本树 + 底部植物点缀（M4 加入每日碎片入口）。
 import { useRef, useState } from "react";
-import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { Effect, EffectState } from "@tauri-apps/api/window";
 import { useNoteStore } from "../../stores/useNoteStore";
 import { useFragmentStore } from "../../stores/useFragmentStore";
-import { useThemeStore } from "../../stores/useThemeStore";
 import { confirmAction } from "../../lib/confirm";
+import { openSettingsWindow } from "./openSettings";
 import {
   IconCalendar,
   IconGear,
@@ -18,34 +16,7 @@ import {
 import { useWheelScroll } from "../../lib/useWheelScroll";
 
 /** 打开设置窗口（单例：已存在则聚焦；按当前主题传窗口效果） */
-async function openSettingsWindow() {
-  const existing = await WebviewWindow.getByLabel("settings");
-  if (existing) {
-    await existing.setFocus();
-    return;
-  }
-  const effect = useThemeStore.getState().config?.window.effect ?? "none";
-  const options: ConstructorParameters<typeof WebviewWindow>[1] = {
-    url: "settings.html",
-    title: "设置 - 轻笺",
-    width: 860,
-    height: 620,
-    minWidth: 700,
-    minHeight: 480,
-    transparent: effect !== "none",
-  };
-  if (effect === "mica" || effect === "acrylic") {
-    options.windowEffects = {
-      effects: [effect === "mica" ? Effect.Mica : Effect.Acrylic],
-      state: EffectState.Active,
-    };
-  }
-  const win = new WebviewWindow("settings", options);
-  await new Promise<void>((resolve, reject) => {
-    void win.once("tauri://created", () => resolve());
-    void win.once("tauri://error", (e) => reject(new Error(String(e))));
-  });
-}
+
 
 export function Sidebar() {
   const dailyBrowserOpen = useFragmentStore((s) => s.dailyBrowserOpen);
@@ -81,7 +52,7 @@ export function Sidebar() {
   return (
     <aside className="qj-sidebar">
       <header className="qj-sidebar-header">
-        <span className="qj-logo">
+        <span className="qj-logo qj-letterpress">
           <svg className="qj-logo-leaf" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 21 C 12 15 14 10 19 7 C 19 12 17 17 12 21 Z" fill="currentColor" />
             <path
@@ -148,7 +119,7 @@ export function Sidebar() {
         </button>
         <button
           type="button"
-          className={`qj-fragment-btn${dailyBrowserOpen ? " is-active" : ""}`}
+          className={`qj-fragment-btn qj-fragment-btn-ghost${dailyBrowserOpen ? " is-active" : ""}`}
           title={dailyBrowserOpen ? "返回笔记模块" : "按日期浏览每日碎片"}
           onClick={() => useFragmentStore.getState().toggleDailyBrowser()}
         >
@@ -163,7 +134,7 @@ export function Sidebar() {
         {notebooks.map((nb) => (
           <div
             key={nb.name}
-            className={`qj-notebook-item${nb.name === activeNotebook ? " is-active" : ""}`}
+            className={`qj-notebook-item qj-ink-bar${nb.name === activeNotebook ? " is-active" : ""}`}
             onMouseDown={() => {
               // 碎片浏览视图中点笔记本 → 直接回到笔记模块，无需先"返回笔记"
               useFragmentStore.getState().closeDailyBrowser();

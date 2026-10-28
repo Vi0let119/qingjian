@@ -8,27 +8,48 @@
 
 :root {
   /* Botanical Garden 默认主题 tokens（M5 起由 ThemeProvider 动态写入） */
-  --qj-primary: #4a7c59;
-  --qj-primary-soft: rgba(74, 124, 89, 0.12);
-  --qj-accent: #f9a620;
-  --qj-danger: #b7472a;
-  --qj-bg: #f5f3ed;
-  --qj-surface: #fffdf8;
-  --qj-text: #2b2b28;
-  --qj-text-secondary: #6b6b63;
-  --qj-border: rgba(74, 124, 89, 0.25);
+  --qj-primary: #317d59;
+  --qj-primary-soft: rgba(49, 125, 89, 0.12);
+  --qj-accent: #c88a3a;
+  --qj-danger: #a84632;
+  --qj-bg: #e9f1ed;
+  --qj-surface: #f4f8f5;
+  --qj-text: #1d2a22;
+  --qj-text-secondary: #4d5b52;
+  --qj-border: rgba(49, 125, 89, 0.22);
   --qj-radius: 10px;
   --qj-shadow: 0 2px 12px rgba(43, 43, 40, 0.08);
   /* 设计扩展变量 */
   --qj-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --qj-serif: Georgia, "Nimbus Roman", SimSun, "宋体", serif;
+
+  /* v3 色阶兜底（主题加载前/无主题时用，ThemeProvider 就绪后覆盖） */
+  --qj-desk: #d7e5de;
+  --qj-paper-0: #ecf3ef;
+  --qj-paper-1: #f2f7f4;
+  --qj-paper-2: #f4f8f5;
+  --qj-ink-100: #e4ece7;
+  --qj-ink-200: #d5e0da;
+  --qj-ink-300: #bccdc4;
+  --qj-ink-400: #94a89d;
+  --qj-ink-500: #6a7f74;
+  --qj-ink-600: #4d5b52;
+  --qj-ink-700: #33403a;
+  --qj-ink-800: #24302a;
+  --qj-ink-900: #1d2a22;
+  --qj-glow-rgb: 49,125,89;
+  --qj-bubble: rgba(49, 125, 89, 0.1);
+  --qj-bubble-edge: rgba(49, 125, 89, 0.32);
+  --qj-ripple: rgba(49, 125, 89, 0.5);
+  --qj-canvas-ink: #1d2a22;
+  --qj-canvas-ink-dim: #4d5b52;
   /* 窗口底色渐变（ThemeProvider 按主题动态推导覆盖） */
   --qj-window-gradient: linear-gradient(
     168deg,
-    #f5f3ed 0%,
-    #edf1ea 34%,
-    #faf7f0 70%,
-    #f5f3ed 100%
+    #e9f1ed 0%,
+    #e3ede7 34%,
+    #f2f7f4 70%,
+    #e9f1ed 100%
   );
 }
 
@@ -145,25 +166,30 @@ body {
 /* ---------- 输入与按钮基元 ---------- */
 
 .qj-input {
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--qj-border);
-  border-radius: 999px;
-  background: var(--qj-surface);
-  color: var(--qj-text);
-  font-size: 13px;
+  height: 31px;
+  padding: 0 11px;
+  border: none;
+  border-radius: var(--qj-r-sm);
+  /* 纸上压出来的凹槽：用内阴影代替描边 */
+  background: var(--qj-ink-100);
+  color: var(--qj-ink-800);
+  font-size: 0.8rem;
   outline: none;
-  transition: border-color 0.18s var(--qj-ease), box-shadow 0.18s var(--qj-ease);
+  box-shadow: inset 0 1px 2px rgba(43, 46, 41, 0.055);
+  transition: background var(--qj-t-base) var(--qj-ease-out),
+    box-shadow var(--qj-t-base) var(--qj-ease-out);
 }
 
 .qj-input::placeholder {
-  color: var(--qj-text-secondary);
-  opacity: 0.65;
+  color: var(--qj-ink-400);
+  opacity: 1;
 }
 
 .qj-input:focus {
-  border-color: var(--qj-primary);
-  box-shadow: 0 0 0 3px var(--qj-primary-soft);
+  background: var(--qj-paper-0);
+  box-shadow:
+    inset 0 0 0 1px var(--qj-primary),
+    0 0 0 3px var(--qj-primary-soft);
 }
 
 .qj-btn,

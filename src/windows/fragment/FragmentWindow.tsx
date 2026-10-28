@@ -12,6 +12,7 @@ import { useFragmentStore } from "../../stores/useFragmentStore";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { ModuleSurface } from "../../components/theme/ModuleSurface";
 import { insertImageViaImport, relForDataUri } from "../../lib/dataUri";
+import { applyWindowIcon } from "../../lib/windowIcon";
 import { IconHome, IconSprout } from "../../components/common/icons";
 import "./fragment.css";
 
@@ -48,6 +49,7 @@ async function openMainWindow() {
       void win.once("tauri://created", () => resolve());
       void win.once("tauri://error", (e) => reject(new Error(String(e))));
     });
+    await applyWindowIcon(win);
   }
   if (isBoot) {
     await getCurrentWindow().close();

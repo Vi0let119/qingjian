@@ -7,8 +7,12 @@ import { NoteTabs } from "./NoteTabs";
 import { DailyBrowser } from "./DailyBrowser";
 import { useNoteStore } from "../../stores/useNoteStore";
 import { useFragmentStore } from "../../stores/useFragmentStore";
+import { useWsMode } from "../../stores/useWsMode";
+import { BubbleWorkspace } from "../../components/bubble/BubbleWorkspace";
 import { ModuleSurface } from "../../components/theme/ModuleSurface";
 import { Onboarding } from "./Onboarding";
+import { openSettingsWindow } from "./openSettings";
+import { IconGear } from "../../components/common/icons";
 import "./main.css";
 
 /**
@@ -72,6 +76,10 @@ export function MainWindow() {
   const error = useNoteStore((s) => s.error);
   const dailyBrowserOpen = useFragmentStore((s) => s.dailyBrowserOpen);
   const fragError = useFragmentStore((s) => s.error);
+  const wsMode = useWsMode((s) => s.mode);
+  const setWsMode = useWsMode((s) => s.setMode);
+  /** 气泡视图下点开笔记 → 切到书写视图（同一窗口内切换，不是新窗口） */
+  const [writing, setWriting] = useState(false);
 
   // 分栏宽度（用户可拖拽，localStorage 记忆）
   // 坑：localStorage 无记录时 getItem 返回 null，Number(null) === 0——
@@ -123,9 +131,19 @@ export function MainWindow() {
         for (const flush of useNoteStore.getState().flushRegistry.values()) flush();
       }
     };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && writing) {
+        e.preventDefault();
+        setWriting(false);
+      }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [writing]);
 
   // 关窗前强制落盘所有打开标签。
   // 坑：不能用 preventDefault()+destroy() 组合——Tauri 2 中该组合会卡住关闭流程
@@ -160,8 +178,100 @@ export function MainWindow() {
     ? `${sidebarW}px 1fr`
     : `${sidebarW}px ${noteListW}px 1fr`;
 
+  // ---------- 气泡视图（主视图）----------
+  // 整个窗口是一块可漫游的画布，三栏边框布局在这里不存在。
+  // 点开笔记 → writing 为 true → 同一窗口内换成书写视图（不新开窗口）。
+  if (wsMode === "bubble" && !dailyBrowserOpen && !writing) {
+    return (
+      <div className="qj-main qj-main-bubble">
+        <BubbleWorkspace
+          onOpenNote={() => {
+            setWriting(true);
+          }}
+        />
+        <button
+          type="button"
+          className="qj-view-switch"
+          title="切换到列表视图"
+          onClick={() => setWsMode("list")}
+        >
+          列表
+        </button>
+        {errorMsg && (
+          <div className="qj-error-bar" onClick={clearError}>
+            {errorMsg}（点击关闭）
+          </div>
+        )}
+        {!onboardingDone && (
+          <Onboarding
+            onDone={() => {
+              localStorage.setItem("qj-onboarding-done", "1");
+              setOnboardingDone(true);
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ---------- 书写视图（气泡点开后）：编辑器独占全窗 ----------
+  // 侧栏与笔记列表都不存在，只留一条悬浮工具条：返回气泡 / 新建 / 设置。
+  if (writing && !dailyBrowserOpen) {
+    return (
+      <div className="qj-main qj-main-writing">
+        <ModuleSurface module="tabs" className="qj-writing-surface">
+          <NoteTabs />
+        </ModuleSurface>
+
+        <div className="qj-writing-dock">
+          <button
+            type="button"
+            className="qj-dock-btn"
+            title="返回气泡视图 (Esc)"
+            onClick={() => setWriting(false)}
+          >
+            ←
+          </button>
+          <span className="qj-dock-sep" aria-hidden="true" />
+          <button
+            type="button"
+            className="qj-dock-btn"
+            title="新建笔记 (Ctrl+N)"
+            onClick={() => void useNoteStore.getState().createNote()}
+          >
+            ＋
+          </button>
+          <button
+            type="button"
+            className="qj-dock-btn"
+            title="设置"
+            onClick={() => void openSettingsWindow()}
+          >
+            <IconGear size={14} />
+          </button>
+        </div>
+
+        {errorMsg && (
+          <div className="qj-error-bar" onClick={clearError}>
+            {errorMsg}（点击关闭）
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="qj-main" style={{ gridTemplateColumns: gridColumns }}>
+      {!writing && (
+        <button
+          type="button"
+          className="qj-view-switch"
+          title="切换到气泡视图"
+          onClick={() => setWsMode("bubble")}
+        >
+          气泡
+        </button>
+      )}
       <ModuleSurface module="sidebar" className="qj-main-sidebar qj-reveal qj-reveal-1">
         <Sidebar />
       </ModuleSurface>

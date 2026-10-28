@@ -1,0 +1,170 @@
+/* ============================================================
+   气泡工作区：面包屑 + 画布 + 展开过渡
+   ============================================================ */
+
+.qj-bubble-workspace {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  background: var(--qj-desk);
+  overflow: hidden;
+}
+
+/* ---------- 面包屑：气泡视图里唯一的固定导航 ---------- */
+
+.qj-bubble-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 12px 16px 10px;
+  /* 不铺底色：气泡视图靠空间分隔，顶部再压一条色带既多余又和主题打架。
+     （旧版写死 rgba(222,220,208)，是上一代浅色主题的纸色，换主题后就成了灰白条） */
+  background: transparent;
+  /* 画布已改为绝对定位铺满，面包屑要明确浮在上面 */
+  position: relative;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* 但面包屑里的按钮仍要可点（否则整条导航失灵） */
+.qj-bubble-crumbs > * {
+  pointer-events: auto;
+}
+
+.qj-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+  padding: 0 9px 0 7px;
+  border: none;
+  border-radius: var(--qj-r-sm);
+  background: transparent;
+  color: var(--qj-ink-600);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background var(--qj-t-fast) var(--qj-ease-out),
+    color var(--qj-t-fast) var(--qj-ease-out);
+}
+
+.qj-crumb:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--qj-canvas-ink) 8%, transparent);
+  color: var(--qj-ink-900);
+}
+
+.qj-crumb:disabled {
+  cursor: default;
+  color: var(--qj-ink-800);
+  font-weight: 600;
+  padding-left: 9px;
+}
+
+.qj-crumb.is-current {
+  color: var(--qj-ink-900);
+  font-weight: 600;
+  cursor: default;
+  padding-left: 0;
+}
+
+.qj-crumb-sep {
+  color: var(--qj-ink-400);
+  font-size: 0.74rem;
+  user-select: none;
+}
+
+.qj-crumbs-spacer {
+  flex: 1;
+}
+
+.qj-crumb-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 27px;
+  padding: 0 11px;
+  border: none;
+  border-radius: var(--qj-r-sm);
+  /* 与整体墨色系一致：深墨底而不是高饱和蓝/绿，避免成为画面里最刺眼的色块 */
+  background: var(--qj-ink-900);
+  color: var(--qj-paper-2);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(43, 46, 41, 0.18);
+  transition: background var(--qj-t-base) var(--qj-ease-out),
+    transform var(--qj-t-fast) var(--qj-ease-out),
+    box-shadow var(--qj-t-base) var(--qj-ease-out);
+}
+
+.qj-crumb-action:hover {
+  background: var(--qj-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(43, 46, 41, 0.2);
+}
+
+.qj-crumb-action:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ---------- 展开过渡：气泡被"吹大"成纸面 ---------- */
+
+.qj-bubble-expand {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(circle at 50% 50%, rgba(74, 124, 89, 0.16), rgba(74, 124, 89, 0.07));
+  box-shadow: 0 18px 40px -16px rgba(43, 46, 41, 0.4);
+  color: var(--qj-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  /* 放大到铺满内容区，圆角从 50% 收到纸页圆角，像一张纸被摊开 */
+  animation: qj-expand-to-page 0.42s var(--qj-ease-out) forwards;
+}
+
+.qj-bubble-expand span {
+  animation: qj-expand-fade 0.3s var(--qj-ease-out) forwards;
+}
+
+@keyframes qj-expand-to-page {
+  from {
+    transform: scale(1);
+    border-radius: 50%;
+    opacity: 1;
+  }
+  to {
+    transform: scale(9);
+    border-radius: 14%;
+    opacity: 0;
+  }
+}
+
+@keyframes qj-expand-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qj-bubble-expand {
+    animation-duration: 0.12s;
+  }
+  .qj-bubble-expand span {
+    animation-duration: 0.1s;
+  }
+}

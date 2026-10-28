@@ -45,6 +45,9 @@ pub fn run() {
             }
             // JS 创建的碎片/设置窗口在创建时由前端按主题传 windowEffects
 
+            // 窗口图标：JS 创建的窗口不继承应用图标（任务栏会显示空白方块），
+            // 由前端在创建后调 windowIcon.ts 的 applyWindowIcon() 显式 setIcon。
+
             // 按通用设置决定启动界面：主界面 或 新增碎片窗口（缺省 → 碎片窗口）
             let mut settings = commands::theme::settings_get().unwrap_or_default();
             // 调试：环境变量可强制启动界面（QJ_FORCE_STARTUP=main|fragment），便于自动化验证

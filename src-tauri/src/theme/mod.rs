@@ -18,40 +18,65 @@ pub struct ThemeState {
 }
 
 /// 内置预设（编译进二进制；首次运行复制到 themes/ 目录）
-pub const BUILTIN_PRESET_RAW: &str = include_str!("../../themes/botanical-garden.json");
-const BUILTIN_BOTANICAL: &str = BUILTIN_PRESET_RAW;
+pub const BUILTIN_PRESET_RAW: &str = include_str!("../../themes/zhubamboo.json");
 
 /// 全部内置预设（文件名, 内容）。新增主题 = 新增 JSON + 在此注册，前端零改动。
+/// v3 重做：9 套单一明度方案（深色系本身即暗色），每套都带气泡视图扩展色板。
 pub const BUILTIN_PRESETS: &[(&str, &str)] = &[
-    ("botanical-garden", BUILTIN_PRESET_RAW),
-    ("bamboo-dew", include_str!("../../themes/bamboo-dew.json")),
-    ("dusk-violet", include_str!("../../themes/dusk-violet.json")),
-    ("warm-sun", include_str!("../../themes/warm-sun.json")),
-    ("ink-night", include_str!("../../themes/ink-night.json")),
-    ("zhuying", include_str!("../../themes/zhuying.json")),
-    ("muxia", include_str!("../../themes/muxia.json")),
-    ("chenlan", include_str!("../../themes/chenlan.json")),
-    ("nuanju", include_str!("../../themes/nuanju.json")),
-    ("ink-black", include_str!("../../themes/ink-black.json")),
+    ("zhubamboo", BUILTIN_PRESET_RAW),
+    ("mizhi", include_str!("../../themes/mizhi.json")),
+    ("wulan", include_str!("../../themes/wulan.json")),
+    ("shating", include_str!("../../themes/shating.json")),
+    ("kucha", include_str!("../../themes/kucha.json")),
+    ("tanghong", include_str!("../../themes/tanghong.json")),
+    ("taizi", include_str!("../../themes/taizi.json")),
+    ("moye", include_str!("../../themes/moye.json")),
+    ("xuanqing", include_str!("../../themes/xuanqing.json")),
 ];
 
-/// 预设自带的内容区背景图（预设 id, 文件名, 字节）——编译进二进制，
-/// 首次运行复制到 themes/preset-bg/ 并把预设 JSON 中的 PRESET_BG:: 占位替换为绝对路径。
-pub const PRESET_IMAGES: &[(&str, &str, &[u8])] = &[
-    ("zhuying", "zhuying.jpg", include_bytes!("../../themes/preset-bg/zhuying.jpg")),
-    ("muxia", "muxia.jpg", include_bytes!("../../themes/preset-bg/muxia.jpg")),
-    ("chenlan", "chenlan.jpg", include_bytes!("../../themes/preset-bg/chenlan.jpg")),
-    ("nuanju", "nuanju.jpg", include_bytes!("../../themes/preset-bg/nuanju.jpg")),
-];
+/// 预设自带的内容区背景图（预设 id, 文件名, 字节）。
+/// v3 起新预设不再附带图片（配色本身已足够完整），保留此表以兼容旧安装残留。
+pub const PRESET_IMAGES: &[(&str, &str, &[u8])] = &[];
 
 /// 预设 JSON 模板中的图片占位前缀
 const PRESET_BG_PLACEHOLDER: &str = "PRESET_BG::";
+
+/// v2 及更早版本的内置预设名。v3 换掉整套配色后，这些名字的文件会残留在用户目录，
+/// 需要一次性清理（只删内置名，不动用户自存配色）。
+const LEGACY_PRESETS: &[&str] = &[
+    "bamboo-dew",
+    "botanical-garden",
+    "chenlan",
+    "dusk-violet",
+    "ink-black",
+    "ink-night",
+    "muxia",
+    "nuanju",
+    "warm-sun",
+    "zhuying",
+];
 
 impl ThemeState {
     /// 启动时加载：active.json 优先；缺失时用内置预设（并落盘）
     pub fn load() -> Result<Self, String> {
         let themes_dir = crate::storage::paths::themes_dir().map_err(|e| e.to_string())?;
         let active_path = themes_dir.join("active.json");
+
+        // ---------- v3 迁移：清理上一代预设文件 ----------
+        // 旧版本会把自己的预设写到 themes/ 目录；v3 换了整套配色，
+        // 这些残留会混在主题列表里（且缺少气泡色板，选中后画布配色会崩）。
+        // 只删"内置预设名不在当前注册表里"的文件，用户自存配色（非内置名）不动。
+        for legacy in LEGACY_PRESETS {
+            let p = themes_dir.join(format!("{legacy}.json"));
+            if p.exists() {
+                let _ = fs::remove_file(&p);
+            }
+        }
+        // 旧版本的预设背景图也一并清掉（新预设不再附带图片）
+        let legacy_bg = themes_dir.join("preset-bg");
+        if legacy_bg.exists() {
+            let _ = fs::remove_dir_all(&legacy_bg);
+        }
 
         // 补写全部内置预设副本（缺失时），并把模板中的 PRESET_BG:: 占位
         // 替换为复制后的图片绝对路径（绝对路径因用户而异，无法静态写入 JSON）
@@ -91,9 +116,20 @@ impl ThemeState {
 
         let config: ThemeConfig = if active_path.exists() {
             let raw = fs::read_to_string(&active_path).map_err(|e| format!("读取主题失败: {e}"))?;
-            serde_json::from_str(&raw).map_err(|e| format!("主题 JSON 解析失败: {e}"))?
+            match serde_json::from_str::<ThemeConfig>(&raw) {
+                Ok(cfg) if !LEGACY_PRESETS.contains(&cfg.name.as_str()) => cfg,
+                // v3 迁移：active 指向已被淘汰的旧预设（或解析失败）时退回新默认主题，
+                // 否则用户升级后会停在一套缺少气泡色板、配色已不存在的主题上。
+                _ => {
+                    let cfg: ThemeConfig = serde_json::from_str(BUILTIN_PRESET_RAW)
+                        .map_err(|e| format!("内置预设损坏: {e}"))?;
+                    let raw = serde_json::to_string_pretty(&cfg).map_err(|e| e.to_string())?;
+                    let _ = fs::write(&active_path, raw);
+                    cfg
+                }
+            }
         } else {
-            let cfg: ThemeConfig = serde_json::from_str(BUILTIN_BOTANICAL)
+            let cfg: ThemeConfig = serde_json::from_str(BUILTIN_PRESET_RAW)
                 .map_err(|e| format!("内置预设损坏: {e}"))?;
             let raw = serde_json::to_string_pretty(&cfg).map_err(|e| e.to_string())?;
             fs::write(&active_path, raw).map_err(|e| format!("初始化主题失败: {e}"))?;
@@ -158,10 +194,17 @@ mod tests {
 
     #[test]
     fn builtin_preset_parses_and_validates() {
-        let cfg: ThemeConfig = serde_json::from_str(BUILTIN_BOTANICAL).unwrap();
+        let cfg: ThemeConfig = serde_json::from_str(BUILTIN_PRESET_RAW).unwrap();
         cfg.validate().unwrap();
-        assert_eq!(cfg.name, "botanical-garden");
-        assert_eq!(cfg.tokens.color.primary, "#4a7c59");
+        assert_eq!(cfg.name, "zhubamboo");
+        // v3 新色板：竹青主色
+        assert_eq!(cfg.tokens.color.primary, "#317d59");
+        // 气泡视图扩展色板必须齐备（缺了会导致画布/气泡退化成默认色）
+        assert!(cfg.tokens.color.desk.is_some());
+        assert!(cfg.tokens.color.glow.is_some());
+        assert!(cfg.tokens.color.bubble.is_some());
+        assert!(cfg.tokens.color.bubble_edge.is_some());
+        assert!(cfg.tokens.color.ripple.is_some());
         assert!(cfg.modules.contains_key("sidebar"));
         assert!(cfg.modules.contains_key("editor"));
         assert!(cfg.modules.contains_key("fragment"));

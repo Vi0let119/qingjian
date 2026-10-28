@@ -6,8 +6,10 @@
   display: grid;
   /* 列宽由 MainWindow 内联 gridTemplateColumns 控制（用户可拖拽，localStorage 记忆） */
   height: 100%;
-  background: var(--qj-window-gradient);
-  color: var(--qj-text);
+  /* v2「纸页」：桌面色打底 + 纤维纹理；三栏是压在桌面上的一叠纸 */
+  background-color: var(--qj-desk);
+  background-image: var(--qj-fiber);
+  color: var(--qj-ink-800);
   overflow: hidden;
 }
 
@@ -68,6 +70,129 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
 }
 
+/* ---------- 书写视图：编辑器独占全窗，无侧栏 ---------- */
+
+.qj-main.qj-main-writing {
+  display: block;
+  position: relative;
+  background: var(--qj-paper-0);
+}
+
+.qj-writing-surface {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.qj-writing-surface > .qj-module-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 悬浮工具条：细长一条，贴在左下角，不构成"栏" */
+.qj-writing-dock {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--qj-r-md);
+  /* 玻璃条：与气泡同一套材质语言 */
+  background: color-mix(in srgb, var(--qj-surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    inset 0 0 0 1px var(--qj-hairline),
+    0 6px 18px -8px rgba(0, 0, 0, 0.28);
+  z-index: 40;
+}
+
+.qj-dock-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--qj-r-sm);
+  background: transparent;
+  color: var(--qj-ink-600);
+  font-size: 0.92rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--qj-t-fast) var(--qj-ease-out),
+    color var(--qj-t-fast) var(--qj-ease-out), transform var(--qj-t-fast) var(--qj-ease-out);
+}
+
+.qj-dock-btn:hover {
+  background: var(--qj-ink-100);
+  color: var(--qj-ink-900);
+  transform: translateY(-1px);
+}
+
+.qj-dock-btn:active {
+  transform: scale(0.94);
+}
+
+.qj-dock-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--qj-hairline-strong);
+}
+
+/* ---------- 气泡视图：整窗画布 ---------- */
+
+.qj-main.qj-main-bubble {
+  display: block;
+  position: relative;
+}
+
+/* 视图切换（气泡 ↔ 列表）：浮在角落，不抢气泡注意力 */
+.qj-view-switch,
+.qj-back-bubble {
+  position: fixed;
+  bottom: 16px;
+  height: 27px;
+  padding: 0 11px;
+  border: none;
+  border-radius: var(--qj-r-sm);
+  /* 跟主题走：写死白色在深色主题下会是一块刺眼的白 */
+  background: color-mix(in srgb, var(--qj-surface) 82%, transparent);
+  color: var(--qj-ink-600);
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  z-index: 30;
+  box-shadow: 0 1px 2px rgba(43, 46, 41, 0.08);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: background var(--qj-t-fast) var(--qj-ease-out),
+    color var(--qj-t-fast) var(--qj-ease-out), transform var(--qj-t-fast) var(--qj-ease-out);
+}
+
+.qj-view-switch {
+  right: 16px;
+}
+
+.qj-back-bubble {
+  left: 16px;
+  z-index: 31;
+}
+
+.qj-view-switch:hover,
+.qj-back-bubble:hover {
+  background: var(--qj-primary);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
 .qj-main-sidebar > .qj-module-content,
 .qj-main-notelist > .qj-module-content,
 .qj-main-tabs > .qj-module-content,
@@ -91,8 +216,11 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border-right: 1px solid var(--qj-border);
-  background: var(--qj-surface);
+  /* 最上层纸（最亮）：向右投下一道真实的影，表示它压着右边的纸 */
+  background: var(--qj-paper-2);
+  box-shadow:
+    1px 0 0 rgba(43, 46, 41, 0.055),
+    8px 0 18px -10px rgba(43, 46, 41, 0.28);
 }
 
 .qj-sidebar-header {
@@ -192,34 +320,44 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-fragment-entry {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 2px 14px 12px;
+  gap: 5px;
+  padding: 2px 12px 10px;
 }
 
+/* 主操作：纸上盖的一枚墨印 */
 .qj-fragment-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--qj-hairline-strong);
-  border-radius: var(--qj-r-full);
-  background: transparent;
-  color: var(--qj-primary);
-  font-size: 13px;
+  height: 33px;
+  padding: 0 11px;
+  border: none;
+  border-radius: var(--qj-r-sm);
+  background: var(--qj-primary);
+  color: #fff;
+  font-size: 0.84rem;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.18s var(--qj-ease), color 0.18s var(--qj-ease),
-    box-shadow 0.18s var(--qj-ease), transform 0.12s var(--qj-ease);
+  box-shadow:
+    0 1px 2px rgba(43, 46, 41, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  transition: background var(--qj-t-base) var(--qj-ease-out),
+    box-shadow var(--qj-t-base) var(--qj-ease-out),
+    transform var(--qj-t-fast) var(--qj-ease-out);
 }
 
 .qj-fragment-btn:hover {
-  background: var(--qj-primary);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(74, 124, 89, 0.3);
+  background: color-mix(in srgb, var(--qj-primary) 88%, #000);
+  box-shadow:
+    0 3px 10px rgba(43, 46, 41, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
 }
 
 .qj-fragment-btn:active {
-  transform: scale(0.97);
+  transform: translateY(0) scale(0.985);
+  box-shadow: 0 1px 2px rgba(43, 46, 41, 0.2);
 }
 
 .qj-fragment-btn-icon {
@@ -232,19 +370,38 @@ body.qj-window-image-on .qj-tabs-strip {
 /* 快捷键徽标（按钮右侧） */
 .qj-fragment-btn-key {
   margin-left: auto;
-  font-size: 10.5px;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: rgba(74, 124, 89, 0.14);
-  color: var(--qj-primary);
-  letter-spacing: 0.03em;
+  font-size: 0.64rem;
+  padding: 1px 6px;
+  border-radius: var(--qj-r-xs);
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
-/* 每日碎片按钮激活态（浏览视图打开时） */
+/* 次级入口：空心墨线印，与主按钮区分权重 */
+.qj-fragment-btn.qj-fragment-btn-ghost {
+  background: transparent;
+  color: var(--qj-ink-700);
+  box-shadow: inset 0 0 0 1px var(--qj-hairline-strong);
+}
+
+.qj-fragment-btn.qj-fragment-btn-ghost:hover {
+  background: var(--qj-ink-100);
+  color: var(--qj-ink-900);
+  box-shadow: inset 0 0 0 1px var(--qj-ink-300);
+}
+
+.qj-fragment-btn.qj-fragment-btn-ghost .qj-fragment-btn-key {
+  background: var(--qj-ink-200);
+  color: var(--qj-ink-600);
+}
+
+/* 每日碎片激活态 */
 .qj-fragment-btn.is-active {
   background: var(--qj-primary);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
+  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.26);
 }
 
 .qj-notebook-list {
@@ -255,31 +412,30 @@ body.qj-window-image-on .qj-tabs-strip {
 }
 
 .qj-notebook-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 10px;
-  margin: 2px 0;
-  border-radius: var(--qj-radius);
+  padding: 8px 10px 8px 12px;
+  margin: 1px 0;
+  border-radius: var(--qj-r-sm);
   cursor: pointer;
-  font-size: 13.5px;
-  color: var(--qj-text);
-  transition: background 0.16s var(--qj-ease), color 0.16s var(--qj-ease),
-    transform 0.16s var(--qj-ease);
+  font-size: 0.86rem;
+  color: var(--qj-ink-700);
+  transition: background var(--qj-t-base) var(--qj-ease-out),
+    color var(--qj-t-base) var(--qj-ease-out);
 }
 
 .qj-notebook-item:hover {
-  background: var(--qj-primary-soft);
-  transform: translateX(2px);
+  background: var(--qj-ink-100);
+  color: var(--qj-ink-900);
 }
 
+/* 选中：纸上盖了一层浅墨 + 左侧墨条（从中心生长，见 paper.css .qj-ink-bar） */
 .qj-notebook-item.is-active {
   background: var(--qj-primary-soft);
   color: var(--qj-primary);
   font-weight: 600;
-  /* 左侧指示条改为 2px 圆角短条，比通高硬阴影柔和 */
-  box-shadow: inset 2px 0 0 var(--qj-primary), var(--qj-shadow-rest);
-  border-radius: var(--qj-r-sm);
 }
 
 .qj-notebook-icon {
@@ -357,15 +513,20 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border-right: 1px solid var(--qj-border);
-  background: var(--qj-bg);
+  /* 中间层纸：比书写区亮、比侧栏暗；左缘接住侧栏投下的影，右缘压着书写区 */
+  background: var(--qj-paper-1);
+  box-shadow:
+    inset 9px 0 12px -12px rgba(43, 46, 41, 0.4),
+    1px 0 0 rgba(43, 46, 41, 0.05),
+    7px 0 16px -11px rgba(43, 46, 41, 0.24);
 }
 
 .qj-note-list-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 16px 14px 12px;
+  gap: 7px;
+  /* 与左侧栏首屏对齐：顶部留白比侧栏 header 略多，形成同一基线 */
+  padding: 18px 12px 12px;
 }
 
 .qj-note-list-header .qj-input {
@@ -414,22 +575,27 @@ body.qj-window-image-on .qj-tabs-strip {
 }
 
 .qj-note-item {
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 11px 14px;
-  margin: 3px 0;
-  border-radius: 12px;
+  padding: 11px 12px 11px 14px;
+  margin: 2px 0;
+  border-radius: var(--qj-r-md);
   cursor: pointer;
-  transition: background 0.16s var(--qj-ease), box-shadow 0.16s var(--qj-ease);
+  transition: background var(--qj-t-base) var(--qj-ease-out),
+    box-shadow var(--qj-t-base) var(--qj-ease-out),
+    transform var(--qj-t-base) var(--qj-ease-out);
 }
 
 .qj-note-item:hover {
-  background: var(--qj-primary-soft);
+  background: var(--qj-ink-100);
 }
 
+/* 选中的笔记：抬起成一张独立的纸（阴影 + 白面） */
 .qj-note-item.is-active {
-  background: var(--qj-surface);
-  box-shadow: var(--qj-shadow), inset 2.5px 0 0 var(--qj-primary);
+  background: var(--qj-paper-0);
+  box-shadow: var(--qj-lift-2);
+  transform: translateX(1px);
 }
 
 .qj-note-item-main {
@@ -504,20 +670,21 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* 透明：底色由"标签栏"与"内容区"两个 ModuleSurface 分别绘制，
-     否则内容区模块的纯色/背景图被父层不透明背景盖住 */
-  background: transparent;
   position: relative;
+  /* 最底下那张纸：必须有底色——内容区 .qj-module 默认是透明的 */
+  background: var(--qj-paper-0);
+  box-shadow: inset 9px 0 12px -12px rgba(43, 46, 41, 0.42);
 }
 
 .qj-tabs-strip {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  padding: 8px 10px 0;
+  gap: 3px;
+  padding: 9px 10px 0;
   overflow-x: auto;
   flex-shrink: 0;
-  background: var(--qj-surface);
+  /* 标签条比纸面稍暗，当前标签用白纸"顶"出来 */
+  background: var(--qj-paper-2);
 }
 
 .qj-tab {
@@ -525,25 +692,27 @@ body.qj-window-image-on .qj-tabs-strip {
   align-items: center;
   gap: 7px;
   max-width: 200px;
-  padding: 7px 8px 8px 14px;
-  border-radius: 12px 12px 0 0;
+  padding: 7px 8px 8px 13px;
+  border-radius: var(--qj-r-md) var(--qj-r-md) 0 0;
   cursor: pointer;
-  font-size: 12.5px;
-  color: var(--qj-text-secondary);
+  font-size: 0.8rem;
+  color: var(--qj-ink-600);
   background: transparent;
-  transition: background 0.16s var(--qj-ease), color 0.16s var(--qj-ease);
+  transition: background var(--qj-t-base) var(--qj-ease-out),
+    color var(--qj-t-base) var(--qj-ease-out);
 }
 
 .qj-tab:hover {
-  background: var(--qj-primary-soft);
+  background: var(--qj-ink-100);
+  color: var(--qj-ink-800);
 }
 
+/* 当前标签：像从书写纸上伸出来的一角，用顶部墨线而不是整块高亮 */
 .qj-tab.is-active {
-  background: var(--qj-surface);
-  color: var(--qj-primary);
+  background: var(--qj-paper-0);
+  color: var(--qj-ink-900);
   font-weight: 600;
-  /* 顶部指示条收窄到 1.5px，并与圆角融合，不再像一条硬横线 */
-  box-shadow: inset 0 1.5px 0 var(--qj-primary);
+  box-shadow: inset 0 2px 0 var(--qj-primary);
 }
 
 .qj-tab-title {
