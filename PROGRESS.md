@@ -2,7 +2,23 @@
 
 > 完整实现计划见 [plan.md](./plan.md)。本文件记录**已完成/进行中/下一步**，供后续会话续接。
 
-## 当前状态（2026-10-02，界面字体缩放 + 编辑器视图缩放）
+## 当前状态（2026-10-28，输入法修复 + 界面精修）
+
+**✅ 修复：中文输入法候选框跳到窗口左上角**
+- 根因：用 CSS `zoom` 做缩放会改变元素坐标系，WebView2 计算 IME 候选窗位置时拿不到缩放映射 → 候选框落到 (0,0)。**`transform: scale` 同样有此问题，两者都不能用于可输入区域。**
+- 编辑器视图缩放：改为 CSS 变量 `--qj-zoom` 乘字号/行高/内边距（`calc(1.18rem * var(--qj-zoom))`），坐标系不变。变量必须定义在 `.qj-editor` 根节点——定义在 `.qj-editor-scroll` 上时，兄弟节点工具栏的 `calc()` 会因变量未定义而整条声明失效。
+- 界面字体缩放：`documentElement.style.zoom` → `style.fontSize = 14px * scale`，正文用 rem 跟随。
+- **坑**：`ThemeProvider` 会把 `tokens.font.size` 写成 `body` 的**内联** `font-size`，内联样式压过 CSS 规则——必须用 `bodyFontSize()`（`src/lib/fontScale.ts`）手动与 scale 相乘，否则调大字号时只有编辑区变、正文不动。
+- 验证方式：`QJ_CDP_PORT=9333` 启动后可连 CDP 在真实页面跑 JS（祖先链无 zoom/transform、字号精确倍数、IPC 广播全链路）。`QJ_FORCE_STARTUP=main|fragment` 可强制启动界面，便于自动化。
+
+**✅ 界面精修（distinctive-ai-design 流程：真实截图 → 评审 → 减法）**
+- 新增 `src/styles/refinement.css` 精修层：圆角/间距/边框/阴影刻度，三档文字层级（`--qj-ink-1/2/3`），结构边界改发丝线
+- 碎片窗口：标题行只留一枚绿叶芽（原来窗口标题+行内叶芽重复），时间降一级；标题/工具栏/正文首字统一落在 16px 左轴；header 与工具栏之间的双分隔线合并为一条；占位文案对比度 0.55→0.85
+- 主界面：logo 字距 0.28em→0.16em 解决拥挤；空状态标题/引导语层级重建；选中态左侧硬阴影改 2px 圆角短条
+- 未采纳的评审建议（有理由）：移除稿纸点阵（属产品识别度）、加粗分隔线、给 `+` 按钮换语义（两个 `+` 分别属侧栏与笔记列表，非重复）
+- 测试：前端 43/43（+3 字号用例）+ Rust 40/40 + tsc/vite 干净
+
+## 上一轮（2026-10-02，界面字体缩放 + 编辑器视图缩放）
 
 **✅ 通用设置第二项：界面字体大小 + 编辑器 Ctrl+滚轮视图缩放**：
 - `AppSettings` 加 `uiFontScale`（CSS zoom 倍率）；`settings_set` 落盘后广播 `settings://changed`（Rust 端 Emitter，参照 theme://changed 模式）

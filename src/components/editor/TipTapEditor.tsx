@@ -2,7 +2,7 @@
 // - 自动保存：onUpdate → dirty → debounce → onSave(markdown)
 // - 挂载时用 initialContent 初始化；内容生命周期由外层（标签页）管理
 // - compact 模式：精简工具栏（碎片窗口）
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -386,14 +386,18 @@ export function TipTapEditor({
 
   if (!editor) return null;
 
+  // 视图缩放系数注入到编辑器根节点：工具栏内边距与书写区字号都按它相乘
   return (
-    <div className="qj-editor">
+    <div className="qj-editor" style={{ "--qj-zoom": String(zoom) } as CSSProperties}>
       {!readonly && (
         <MenuBar editor={editor} compact={compact} onInsertImage={onInsertImage ? insertImage : undefined} />
       )}
-      {/* zoom 放在滚动容器上（而非内层包裹）：.qj-editor-content 的 min-height:100%
-          依赖直接父级，包一层会破坏空文档时的稿纸纹理全高填充 */}
-      <div className="qj-editor-scroll" ref={scrollRef} style={{ zoom }}>
+      {/* 缩放用 CSS 变量驱动字号/行高/内边距，而不是 zoom：
+          zoom 会改变元素坐标系，WebView2/Chromium 计算 IME 候选窗位置时拿不到缩放后的
+          坐标映射，中文输入法候选框会直接跑到窗口左上角 (0,0)。
+          用变量缩放（transform 也能改坐标系，同样不能用）可保持 DOM 坐标与屏幕一致。
+          --qj-zoom 在 .qj-editor 根节点注入，这里直接继承。 */}
+      <div className="qj-editor-scroll" ref={scrollRef}>
         <EditorContent editor={editor} />
       </div>
       <div className={`qj-zoom-badge${zoomBadge ? " is-visible" : ""}`}>

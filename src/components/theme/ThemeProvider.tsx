@@ -6,6 +6,7 @@ import { api, type AppSettings, type ThemeConfig } from "../../lib/api";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { mixHex } from "../../lib/contrast";
 import { absToDataUri } from "../../lib/dataUri";
+import { bodyFontSize } from "../../lib/fontScale";
 
 /** tokens → CSS 变量映射 */
 const TOKEN_VARS: Record<string, (c: ThemeConfig) => string> = {
@@ -95,8 +96,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
   }, [setConfig]);
 
-  // 界面字体缩放（通用设置）：html 级 CSS zoom，各窗口加载时读取，
-  // 设置窗口改动后经 settings://changed 广播即时同步
+  // 界面字体缩放（通用设置）：写入基准字号变量，各窗口加载时读取，
+  // 设置窗口改动后经 settings://changed 广播即时同步。
+  // 坑：不能用 documentElement.style.zoom——元素坐标系会随之改变，
+  // WebView2 计算 IME 候选窗位置时拿不到缩放映射，中文输入法候选框会跑到窗口左上角。
+  // 改为 font-size 基准变量 + rem/em 布局，文字真正放大且不移动任何坐标系。
   const [fontScale, setFontScale] = useState(1);
   useEffect(() => {
     let disposed = false;
@@ -120,7 +124,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.style.zoom = String(fontScale);
+    // 只设基准字号，不设 zoom。html 字号 = 14px × scale，正文用 rem 继承。
+    document.documentElement.style.fontSize = `${14 * fontScale}px`;
+    document.documentElement.style.setProperty("--qj-font-scale", String(fontScale));
   }, [fontScale]);
 
   // 写入 :root 变量
@@ -137,8 +143,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.body.style.backgroundImage =
       cfg.window.effect !== "none" ? "" : "var(--qj-window-gradient)";
     document.body.style.fontFamily = cfg.tokens.font.family;
-    document.body.style.fontSize = cfg.tokens.font.size;
-  }, [cfg]);
+    document.body.style.fontSize = bodyFontSize(cfg.tokens.font.size, fontScale);
+  }, [cfg, fontScale]);
 
   // 全窗口背景图开启标记（body class 驱动模块毛玻璃与面板层级）
   const hasWindowImage = !!windowBgUrl;

@@ -99,18 +99,23 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 16px 12px;
+  gap: var(--qj-sp-2);
+  padding: 22px 16px 14px;
 }
 
-/* 标识：衬线字 + 蕨叶点缀 */
+/* 标识：衬线字 + 蕨叶点缀
+   字距从 0.28em 收到 0.16em——原来的大间距让两个字视觉上"散开"，
+   与右侧按钮挤在一起时更显凌乱 */
 .qj-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  min-width: 0;
   font-family: var(--qj-serif);
-  font-size: 21px;
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.16em;
+  line-height: 1.1;
   color: var(--qj-primary);
   user-select: none;
 }
@@ -124,14 +129,15 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-sidebar-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 /* 圆形图标按钮：flex 居中防字形裁剪（修复「＋」被遮挡） */
 .qj-sidebar-icon-btn,
 .qj-sidebar-add {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -193,11 +199,11 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-fragment-btn {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   height: 34px;
   padding: 0 14px;
-  border: 1px solid rgba(74, 124, 89, 0.45);
-  border-radius: 999px;
+  border: 1px solid var(--qj-hairline-strong);
+  border-radius: var(--qj-r-full);
   background: transparent;
   color: var(--qj-primary);
   font-size: 13px;
@@ -271,7 +277,9 @@ body.qj-window-image-on .qj-tabs-strip {
   background: var(--qj-primary-soft);
   color: var(--qj-primary);
   font-weight: 600;
-  box-shadow: inset 2.5px 0 0 var(--qj-primary);
+  /* 左侧指示条改为 2px 圆角短条，比通高硬阴影柔和 */
+  box-shadow: inset 2px 0 0 var(--qj-primary), var(--qj-shadow-rest);
+  border-radius: var(--qj-r-sm);
 }
 
 .qj-notebook-icon {
@@ -355,8 +363,9 @@ body.qj-window-image-on .qj-tabs-strip {
 
 .qj-note-list-header {
   display: flex;
-  gap: 8px;
-  padding: 14px;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 14px 12px;
 }
 
 .qj-note-list-header .qj-input {
@@ -386,10 +395,14 @@ body.qj-window-image-on .qj-tabs-strip {
 }
 
 .qj-note-list-header .qj-btn-primary {
-  width: 34px;
+  width: 32px;
   height: 32px;
   padding: 0;
-  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
   flex-shrink: 0;
 }
 
@@ -529,7 +542,8 @@ body.qj-window-image-on .qj-tabs-strip {
   background: var(--qj-surface);
   color: var(--qj-primary);
   font-weight: 600;
-  box-shadow: 0 -2px 0 var(--qj-primary);
+  /* 顶部指示条收窄到 1.5px，并与圆角融合，不再像一条硬横线 */
+  box-shadow: inset 0 1.5px 0 var(--qj-primary);
 }
 
 .qj-tab-title {
@@ -732,31 +746,38 @@ body.qj-window-image-on .qj-tabs-strip {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--qj-text-secondary);
-  font-size: 14px;
+  gap: 2px;
+  color: var(--qj-ink-2);
+  font-size: 0.88rem;
   text-align: center;
 }
 
+/* 空状态标识：视觉重心只落一次，字号与其他标题一致 */
 .qj-empty-title {
   font-family: var(--qj-serif);
-  font-size: 27px;
+  font-size: 1.85rem;
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.22em;
   color: var(--qj-primary);
   margin: 0;
+  /* 字距会在末字后也加一段，右侧补回来保持真正居中 */
+  text-indent: 0.22em;
 }
 
 .qj-empty-leaf {
-  width: 46px;
-  height: 46px;
-  opacity: 0.75;
-  margin-bottom: 6px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.55;
+  margin-bottom: 14px;
 }
 
+/* 引导语：比标题明显轻，但对比度足够——原来 12.5px + 0.75 透明度几乎读不清 */
 .qj-empty-hint {
-  font-size: 12.5px;
-  opacity: 0.75;
+  font-size: 0.8rem;
+  color: var(--qj-ink-2);
+  letter-spacing: 0.02em;
+  line-height: 1.8;
+  max-width: 22em;
 }
 
 .qj-empty-small {

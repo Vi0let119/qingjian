@@ -1,0 +1,91 @@
+/* ============================================================
+   轻笺 · 精修层（Refinement Layer）
+   设计意图：在「植物园·纸张」基调上收束视觉噪音——
+   - 统一圆角/间距/边框/阴影的"刻度"，让界面有克制的秩序感
+   - 边界从"硬直线"改为"极淡的发丝线 + 必要处的柔和阴影"
+   - 主色只出现在真正的主操作与当前状态上，其余退回中性灰绿
+   - 字号全部相对 rem，随「界面字体大小」设置等比变化
+   ============================================================ */
+
+:root {
+  /* ---- 圆角刻度：大小三级，避免每个组件各自为政 ---- */
+  --qj-r-xs: 6px;
+  --qj-r-sm: 9px;
+  --qj-r-md: 12px;
+  --qj-r-lg: 16px;
+  --qj-r-full: 999px;
+
+  /* ---- 间距刻度：4 的倍数，用于统一呼吸感 ---- */
+  --qj-sp-1: 4px;
+  --qj-sp-2: 8px;
+  --qj-sp-3: 12px;
+  --qj-sp-4: 16px;
+  --qj-sp-5: 24px;
+
+  /* ---- 边框：发丝线，比原来的 0.25 透明度更轻，靠阴影补层次 ---- */
+  --qj-hairline: rgba(74, 124, 89, 0.14);
+  --qj-hairline-strong: rgba(74, 124, 89, 0.24);
+
+  /* ---- 阴影两级：静置 / 浮起 ---- */
+  --qj-shadow-rest: 0 1px 2px rgba(43, 43, 40, 0.04);
+  --qj-shadow-lift: 0 4px 16px rgba(43, 43, 40, 0.07), 0 1px 3px rgba(43, 43, 40, 0.04);
+
+  /* ---- 文字层级：主/次/弱三档，不再靠 opacity 随手压 ---- */
+  --qj-ink-1: var(--qj-text);
+  --qj-ink-2: var(--qj-text-secondary);
+  --qj-ink-3: rgba(107, 107, 99, 0.62);
+
+  /* ---- 交互反馈时长 ---- */
+  --qj-t-fast: 0.14s;
+  --qj-t-base: 0.22s;
+}
+
+/* ---------- 全局：结构边界改为发丝线 ---------- */
+
+/* 面板之间的硬分割线 → 发丝线（视觉上"存在但不上浮") */
+.qj-sidebar,
+.qj-note-list {
+  border-right: 1px solid var(--qj-hairline);
+}
+
+.qj-tabs-body {
+  border-top: 1px solid var(--qj-hairline);
+}
+
+/* 滚动条：更细、更淡，不与内容抢注意力 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(74, 124, 89, 0.16);
+  border-radius: var(--qj-r-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 124, 89, 0.3);
+  background-clip: content-box;
+}
+
+/* ---------- 焦点环：柔和外扩，不刺眼 ---------- */
+
+:focus-visible {
+  outline: 2px solid var(--qj-primary);
+  outline-offset: 2px;
+  border-radius: var(--qj-r-xs);
+}
+
+/* ---------- 减少动态偏好 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

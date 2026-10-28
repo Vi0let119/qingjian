@@ -45,9 +45,19 @@ body {
   background: var(--qj-bg);
   color: var(--qj-text);
   font-family: var(--qj-font-family, "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif);
-  font-size: var(--qj-font-size, 14px);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* 基准字号只设在 html 上（ThemeProvider 写入），body 用 1rem 跟随；
+   这里显式声明 body 的 rem 字号——单独写在 html,body 合并规则里会被
+   html 继承值提前命中，导致「界面字体大小」只放大编辑区、正文不动。 */
+html {
+  font-size: 14px;
+}
+
+body {
+  font-size: 1rem;
 }
 
 #root {

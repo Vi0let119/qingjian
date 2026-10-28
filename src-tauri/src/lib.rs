@@ -15,6 +15,15 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 验证用：设置 QJ_CDP_PORT 时打开 WebView2 远程调试端口（不设置则完全不生效）
+    let cdp_port = std::env::var("QJ_CDP_PORT").ok();
+    if let Some(port) = cdp_port.clone() {
+        std::env::set_var(
+            "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+            format!("--remote-debugging-port={port}"),
+        );
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -37,7 +46,13 @@ pub fn run() {
             // JS 创建的碎片/设置窗口在创建时由前端按主题传 windowEffects
 
             // 按通用设置决定启动界面：主界面 或 新增碎片窗口（缺省 → 碎片窗口）
-            let settings = commands::theme::settings_get().unwrap_or_default();
+            let mut settings = commands::theme::settings_get().unwrap_or_default();
+            // 调试：环境变量可强制启动界面（QJ_FORCE_STARTUP=main|fragment），便于自动化验证
+            if let Ok(force) = std::env::var("QJ_FORCE_STARTUP") {
+                if force == "main" || force == "fragment" {
+                    settings.startup_window = Some(force);
+                }
+            }
             let main = app
                 .get_webview_window("main")
                 .expect("tauri.conf.json 必须声明 main 窗口");

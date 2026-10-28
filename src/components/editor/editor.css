@@ -7,6 +7,10 @@
   flex-direction: column;
   height: 100%;
   min-width: 0;
+  /* 视图缩放系数（Ctrl+滚轮）：定义在编辑器根节点，
+     工具栏与滚动容器都能取到；若只定义在 .qj-editor-scroll 上，
+     兄弟节点工具栏的 calc() 会因变量未定义而整条声明失效。 */
+  --qj-zoom: 1;
 }
 
 /* ---------- 工具栏 ---------- */
@@ -15,8 +19,9 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 7px 12px;
-  border-bottom: 1px solid var(--qj-border);
+  /* 左右内边距对齐书写区（紧凑模式 16px），让工具栏首字与正文首字落在同一竖线上 */
+  padding: 7px 16px;
+  border-bottom: 1px solid var(--qj-hairline);
   background: var(--qj-surface);
   flex-shrink: 0;
   user-select: none;
@@ -101,15 +106,19 @@ body.qj-window-image-on .qj-menubar {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  /* 视图缩放系数（Ctrl+滚轮，--qj-zoom 由组件注入，默认 1）。
+     用字号/行高/内边距相乘实现缩放，不用 zoom/transform——那会移动元素坐标系，
+     导致中文输入法候选框定位到窗口左上角。 */
+  --qj-zoom: 1;
 }
 
 .qj-editor-content {
   min-height: 100%;
   /* 稿纸点格纹理：极淡的绿色细点，像真正的书写纸 */
   background-image: radial-gradient(rgba(74, 124, 89, 0.05) 1px, transparent 1px);
-  background-size: 24px 24px;
-  padding: 34px 40px 90px;
-  font-size: 16.5px;
+  background-size: calc(24px * var(--qj-zoom)) calc(24px * var(--qj-zoom));
+  padding: calc(34px * var(--qj-zoom)) calc(40px * var(--qj-zoom)) calc(90px * var(--qj-zoom));
+  font-size: calc(1.18rem * var(--qj-zoom));
   line-height: 1.9;
   color: var(--qj-text);
   outline: none;
@@ -117,8 +126,8 @@ body.qj-window-image-on .qj-menubar {
 }
 
 .qj-editor-compact {
-  padding: 14px 16px 44px;
-  font-size: 14px;
+  padding: calc(14px * var(--qj-zoom)) calc(16px * var(--qj-zoom)) calc(44px * var(--qj-zoom));
+  font-size: calc(1rem * var(--qj-zoom));
   line-height: 1.7;
 }
 
@@ -218,8 +227,9 @@ body.qj-window-image-on .qj-menubar {
 .qj-editor-content p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: var(--qj-text-secondary);
-  opacity: 0.55;
+  color: var(--qj-ink-2);
+  /* 原来 0.55 透明度的次要色叠在点阵上偏灰，对比度不足；提到 0.85 仍安静但可读 */
+  opacity: 0.85;
   pointer-events: none;
   height: 0;
   font-style: italic;

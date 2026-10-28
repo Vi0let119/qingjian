@@ -82,10 +82,10 @@ export default function FragmentWindow() {
   }, [setSectionId]);
 
   if (initError) {
-    return <div className="qj-frag-error">初始化失败：{initError}</div>;
+    return <div className="qj-frag-error-center">接入失败：{initError}</div>;
   }
   if (!sectionId) {
-    return <div className="qj-frag-error">正在接入当日记录…</div>;
+    return <div className="qj-frag-error-center">正在接入当日记录…</div>;
   }
 
   // 启动引导的碎片窗口：点"打开主界面"后会关闭自己（普通碎片窗口保持打开）
@@ -96,8 +96,9 @@ export default function FragmentWindow() {
       <header className="qj-frag-header">
         <span className="qj-frag-title">
           <IconSprout size={13} />
-          碎片 · {nowHM()}
+          碎片
         </span>
+        <span className="qj-frag-time">{nowHM()}</span>
         <span className={`qj-frag-status qj-frag-${saveStatus}`}>
           {saveStatus === "saved" ? "已保存" : saveStatus === "saving" ? "保存中…" : saveStatus === "error" ? "保存失败" : ""}
         </span>

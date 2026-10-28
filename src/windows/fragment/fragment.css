@@ -1,5 +1,9 @@
 /* ============================================================
    碎片窗口（精简小窗 · 「植物园·纸张」）
+   精修要点：
+   - 标题行只留一枚绿色叶芽，文字退回墨色，避免整行都在"喊"
+   - 关闭按钮移除后，右侧只留「返回主界面」，与发丝边距对齐
+   - 边界全部改为发丝线，正文留白与主窗口书写区呼应
    ============================================================ */
 
 .qj-fragment {
@@ -27,9 +31,10 @@
 .qj-frag-header {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--qj-border);
+  gap: var(--qj-sp-2);
+  /* 左侧 16px 与工具栏、正文首字共用同一竖轴；右侧 14px 留出按钮热区边距 */
+  padding: 10px 14px 10px 16px;
+  /* 不画下边框：与工具栏合并为一个"标题+工具"区块，整块底部只留一条发丝线 */
   flex-shrink: 0;
   user-select: none;
 }
@@ -38,39 +43,55 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: 0.86rem;
   font-weight: 600;
-  color: var(--qj-primary);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  /* 主色只给叶芽，文字退回墨色——避免整行都在"喊" */
+  color: var(--qj-ink-1);
 }
 
-/* 标题前的小叶芽 */
+/* 标题前的小叶芽：全窗口唯一的绿色记号 */
 .qj-frag-title svg {
-  color: var(--qj-accent);
+  color: var(--qj-primary);
   flex-shrink: 0;
+}
+
+/* 时间：比标题轻一档，作为次要信息 */
+.qj-frag-time {
+  margin-left: 2px;
+  font-size: 0.78rem;
+  color: var(--qj-ink-3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .qj-frag-status {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--qj-text-secondary);
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--qj-ink-3);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--qj-t-base) ease;
 }
 
 .qj-frag-status::before {
   content: "";
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--qj-accent);
+  background: var(--qj-ink-3);
 }
 
 .qj-frag-status:not(.qj-frag-clean) {
   opacity: 1;
+}
+
+/* 保存中：呼吸的小点 */
+.qj-frag-dirty::before {
+  background: var(--qj-accent);
+  animation: qj-save-pulse 1.1s ease-in-out infinite;
 }
 
 .qj-frag-saved {
@@ -85,47 +106,87 @@
   color: var(--qj-danger);
 }
 
+.qj-frag-error::before {
+  background: var(--qj-danger);
+}
+
+/* ---------- 返回主界面（唯一按钮，位置固定） ---------- */
+
 .qj-frag-open-main {
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  color: var(--qj-text-secondary);
-  transition: background 0.15s ease, color 0.15s ease, transform 0.12s var(--qj-ease);
+  border-radius: var(--qj-r-sm);
+  color: var(--qj-ink-2);
+  flex-shrink: 0;
+  transition: background var(--qj-t-fast) var(--qj-ease), color var(--qj-t-fast) var(--qj-ease),
+    border-color var(--qj-t-fast) var(--qj-ease), transform 0.1s var(--qj-ease);
 }
 
 .qj-frag-open-main:hover {
   background: var(--qj-primary-soft);
+  border-color: var(--qj-hairline-strong);
   color: var(--qj-primary);
 }
 
 .qj-frag-open-main:active {
-  transform: scale(0.9);
+  transform: scale(0.94);
 }
 
-.qj-frag-error {
+/* ---------- 状态页 / 错误条 ---------- */
+
+.qj-frag-error-center {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 13px;
-  padding: 16px;
+  font-size: 0.82rem;
+  color: var(--qj-ink-2);
+  padding: var(--qj-sp-4);
+  text-align: center;
 }
 
 .qj-frag-error-line {
-  padding: 5px 12px;
+  padding: 6px 12px;
   margin: 6px 10px 0;
   background: var(--qj-danger);
   color: #fff;
-  font-size: 12px;
-  border-radius: 8px;
+  font-size: 0.76rem;
+  border-radius: var(--qj-r-xs);
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ---------- 小窗内的编辑器微调 ---------- */
+
+.qj-fragment .qj-menubar {
+  padding: 6px calc(16px * var(--qj-zoom));
+  gap: 2px;
+  /* 与 header 之间只留一条发丝线（header 自带下边框）：
+     原来两者各画一条，14px 间距内出现"双线夹心"，显得繁琐 */
+  border-bottom: 1px solid var(--qj-hairline);
+  background: transparent;
+}
+
+.qj-fragment .qj-menubar-btn {
+  min-width: 28px;
+  height: 26px;
+  border-radius: var(--qj-r-xs);
+}
+
+.qj-fragment .qj-editor-scroll {
+  scrollbar-gutter: stable;
+}
+
+/* 占位文案：窄窗里不做斜体，读起来更安静 */
+.qj-fragment .qj-editor-content p.is-editor-empty:first-child::before {
+  font-style: normal;
+  letter-spacing: 0.01em;
 }
