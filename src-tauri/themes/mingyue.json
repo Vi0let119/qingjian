@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "name": "mingyue",
+  "base": "light",
+  "window": {
+    "effect": "none",
+    "state": "active"
+  },
+  "tokens": {
+    "color": {
+      "primary": "#B3392F",
+      "accent": "#249968",
+      "danger": "#B3402F",
+      "bg": "#F3EFEF",
+      "surface": "#F9F8F8",
+      "text": "#3A2C2C",
+      "textSecondary": "#0F0B0B",
+      "border": "rgba(179,57,47,0.22)",
+      "desk": "#E8DCDB",
+      "glow": "230,131,123",
+      "bubble": "rgba(179,57,47,0.1)",
+      "bubbleEdge": "rgba(179,57,47,0.34)",
+      "ripple": "rgba(179,57,47,0.42)"
+    },
+    "font": {
+      "family": "\"Segoe UI\", \"Microsoft YaHei UI\", system-ui, sans-serif",
+      "size": "14px"
+    },
+    "radius": "10px",
+    "shadow": "0 2px 12px rgba(43,43,40,0.08)"
+  },
+  "modules": {
+    "sidebar": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "noteList": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "tabs": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "editor": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "fragment": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "settings": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    }
+  }
+}

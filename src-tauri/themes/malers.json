@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "name": "malers",
+  "base": "dark",
+  "window": {
+    "effect": "none",
+    "state": "active"
+  },
+  "tokens": {
+    "color": {
+      "primary": "#01847F",
+      "accent": "#D65199",
+      "danger": "#E8705D",
+      "bg": "#152120",
+      "surface": "#1F2D2D",
+      "text": "#FFFFFF",
+      "textSecondary": "#FFFFFF",
+      "border": "rgba(1,132,127,0.22)",
+      "desk": "#0F1817",
+      "glow": "5,255,245",
+      "bubble": "rgba(1,132,127,0.13)",
+      "bubbleEdge": "rgba(1,132,127,0.42)",
+      "ripple": "rgba(1,132,127,0.42)"
+    },
+    "font": {
+      "family": "\"Segoe UI\", \"Microsoft YaHei UI\", system-ui, sans-serif",
+      "size": "14px"
+    },
+    "radius": "10px",
+    "shadow": "0 2px 12px rgba(0,0,0,0.32)"
+  },
+  "modules": {
+    "sidebar": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "noteList": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "tabs": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "editor": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "fragment": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    },
+    "settings": {
+      "backgroundImage": null,
+      "backgroundFit": "cover",
+      "blur": 0,
+      "solidColor": null,
+      "textColor": null
+    }
+  }
+}

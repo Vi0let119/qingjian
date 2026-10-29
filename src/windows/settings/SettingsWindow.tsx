@@ -23,17 +23,26 @@ const MODULES = [
 ] as const;
 
 /** 预设 id → 展示名 */
+/** 预设显示名。遗漏的 id 会直接显示成英文 key，所以新增主题必须在这里登记。 */
 const PRESET_LABELS: Record<string, string> = {
-  "botanical-garden": "植物园",
-  "bamboo-dew": "竹露",
-  "dusk-violet": "暮山紫",
-  "warm-sun": "暖阳",
-  "ink-night": "墨夜",
-  zhuying: "朱樱",
-  muxia: "暮霞",
-  chenlan: "沉蓝",
-  nuanju: "暖橘",
-  "ink-black": "墨黑",
+  // v3
+  zhubamboo: "竹青",
+  mizhi: "米纸",
+  wulan: "雾蓝",
+  shating: "沙汀",
+  kucha: "枯茶",
+  tanghong: "棠红",
+  taizi: "苔紫",
+  moye: "墨夜",
+  xuanqing: "玄青",
+  // v4（取自配色视频）
+  mingyue: "明月珰",
+  qiubo: "秋波蓝",
+  somnus: "普鲁士蓝",
+  malers: "马尔斯绿",
+  jiuhong: "深酒红",
+  klein: "克莱因蓝",
+  meiye: "魅夜",
 };
 
 export default function SettingsWindow() {

@@ -21,8 +21,11 @@ pub struct ThemeState {
 pub const BUILTIN_PRESET_RAW: &str = include_str!("../../themes/zhubamboo.json");
 
 /// 全部内置预设（文件名, 内容）。新增主题 = 新增 JSON + 在此注册，前端零改动。
-/// v3 重做：9 套单一明度方案（深色系本身即暗色），每套都带气泡视图扩展色板。
+/// v3：9 套单一明度方案（深色系本身即暗色），每套都带气泡视图扩展色板。
+/// v4：新增 7 套，色值取自配色视频（B 站「世界经典顶级撞色」「世界著名配色」等），
+///     经像素采样校验后由 skills/creative/color-palette-extraction 生成。
 pub const BUILTIN_PRESETS: &[(&str, &str)] = &[
+    // ---- v3 原有 ----
     ("zhubamboo", BUILTIN_PRESET_RAW),
     ("mizhi", include_str!("../../themes/mizhi.json")),
     ("wulan", include_str!("../../themes/wulan.json")),
@@ -32,6 +35,17 @@ pub const BUILTIN_PRESETS: &[(&str, &str)] = &[
     ("taizi", include_str!("../../themes/taizi.json")),
     ("moye", include_str!("../../themes/moye.json")),
     ("xuanqing", include_str!("../../themes/xuanqing.json")),
+    // ---- v4 视频取色 ----
+    // 浅色：明月珰 × 石榴裙（传统色）、秋波蓝 × 若竹
+    ("mingyue", include_str!("../../themes/mingyue.json")),
+    ("qiubo", include_str!("../../themes/qiubo.json")),
+    // 深色：普鲁士蓝 × 秋金、马尔斯绿 × 晴空、深酒红 × 暖沙、
+    //       克莱因蓝、魅夜黑 × 电光蓝
+    ("somnus", include_str!("../../themes/somnus.json")),
+    ("malers", include_str!("../../themes/malers.json")),
+    ("jiuhong", include_str!("../../themes/jiuhong.json")),
+    ("klein", include_str!("../../themes/klein.json")),
+    ("meiye", include_str!("../../themes/meiye.json")),
 ];
 
 /// 预设自带的内容区背景图（预设 id, 文件名, 字节）。
