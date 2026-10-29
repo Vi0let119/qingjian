@@ -1,6 +1,6 @@
 [package]
 name = "qingjian"
-version = "0.1.0"
+version = "0.1.5"
 description = "轻笺 —— 轻量便签应用"
 edition = "2021"
 
