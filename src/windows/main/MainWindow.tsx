@@ -12,7 +12,7 @@ import { BubbleWorkspace } from "../../components/bubble/BubbleWorkspace";
 import { ModuleSurface } from "../../components/theme/ModuleSurface";
 import { Onboarding } from "./Onboarding";
 import { openSettingsWindow } from "./openSettings";
-import { IconGear } from "../../components/common/icons";
+import { IconGear, IconChevronLeft } from "../../components/common/icons";
 import "./main.css";
 
 /**
@@ -94,6 +94,9 @@ export function MainWindow() {
     const raw = localStorage.getItem("qj-notelist-w");
     if (raw === null) return 284;
     const v = Number(raw);
+    // 0 是合法的"收起"状态（双击分隔条可收起/展开），但"收起"必须看得见——
+    // 见下方 collapsed 提示条。以前的坑是收起了却没有任何提示，
+    // 用户以为笔记本里的笔记丢了（数据在，只是整栏宽 0px）。
     return Number.isFinite(v) && v >= 0 ? v : 284;
   });
   // 首次启动教程（仅显示一次）
@@ -288,6 +291,21 @@ export function MainWindow() {
         <>
           <ModuleSurface module="noteList" className="qj-main-notelist qj-reveal qj-reveal-2">
             <NoteList />
+            {/* 收起时给一个可见的把手：以前整栏宽度为 0、又没有任何提示，
+                用户会以为笔记本里的笔记没了（其实数据都在） */}
+            {noteListW === 0 && (
+              <button
+                type="button"
+                className="qj-notelist-collapsed"
+                title="展开笔记列表"
+                onClick={() => setNoteListW(284)}
+              >
+                <span className="qj-collapsed-arrow">
+                  <IconChevronLeft size={13} />
+                </span>
+                笔记列表
+              </button>
+            )}
           </ModuleSurface>
           <Divider
             left={sidebarW + noteListW}

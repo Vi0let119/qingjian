@@ -13,6 +13,13 @@
   --qj-zoom: 1;
 }
 
+/* 每日碎片里的只读编辑器：它是"查看某天的碎片"，不是"在纸上书写"。
+   保留点阵纹理会让它变成一块和周围不同色的矩形，所以抹掉纸面。 */
+.qj-daily-content .qj-editor-content {
+  background-color: transparent;
+  background-image: none;
+}
+
 /* ---------- 工具栏 ---------- */
 
 .qj-menubar {

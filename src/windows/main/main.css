@@ -60,6 +60,41 @@ body.qj-window-image-on .qj-tabs-strip {
   background: var(--qj-primary);
 }
 
+/* 笔记列表收起时的把手：列表宽 0 时浮在左侧，
+   点它恢复 284px。没有这个把手时，用户会以为笔记丢了（数据一直在）。 */
+.qj-notelist-collapsed {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: none;
+  border-radius: 0 var(--qj-r-sm) var(--qj-r-sm) 0;
+  background: var(--qj-surface);
+  box-shadow: 1px 0 0 var(--qj-hairline), 0 2px 8px color-mix(in srgb, var(--qj-ink-900) 12%, transparent);
+  color: var(--qj-primary);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  z-index: 5;
+  writing-mode: vertical-rl;
+  transition: background 0.16s var(--qj-ease), color 0.16s var(--qj-ease);
+}
+
+.qj-notelist-collapsed:hover {
+  background: var(--qj-primary);
+  color: var(--qj-on-primary, #fff);
+}
+
+.qj-collapsed-arrow {
+  display: inline-flex;
+  writing-mode: horizontal-tb;
+  transform: rotate(180deg);
+}
+
 /* ModuleSurface 包裹层作为 grid 子项 */
 .qj-main-sidebar,
 .qj-main-notelist,
@@ -68,6 +103,8 @@ body.qj-window-image-on .qj-tabs-strip {
   min-width: 0;
   min-height: 0;
   display: flex;
+  /* 供内部绝对定位元素参考（收起把手等） */
+  position: relative;
 }
 
 /* ---------- 书写视图：编辑器独占全窗，无侧栏 ---------- */
@@ -795,7 +832,10 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: transparent;
+  /* 必须自己铺底：外层 ModuleSurface 给的是窗口纸张色，
+     而每日碎片的日期栏和内容区是两个不同层次的色，
+     不铺底的话内容区会露出一块和周围不一致的矩形 */
+  background: var(--qj-surface);
 }
 
 .qj-daily-back {
@@ -847,6 +887,7 @@ body.qj-window-image-on .qj-tabs-strip {
   overflow-y: auto;
   padding: 10px;
   border-right: 1px solid var(--qj-border);
+  background: var(--qj-surface);
 }
 
 .qj-daily-day {
@@ -911,6 +952,9 @@ body.qj-window-image-on .qj-tabs-strip {
   min-width: 0;
   min-height: 0;
   display: flex;
+  /* 内容区比日期栏沉一档，形成"列表在上、纸张在下"的层叠关系，
+     而不是两块同色拼在一起的生硬矩形 */
+  background: var(--qj-bg);
 }
 
 .qj-daily-content > * {
