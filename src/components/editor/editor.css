@@ -104,22 +104,38 @@ body.qj-window-image-on .qj-menubar {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  /* flex 列 + 内容 flex-grow：内容短时纸面也铺满整个窗格。
+     只靠 min-height:100% 不行——父级是 height:auto，百分比解析不出来，
+     纸面会只有正文那么高，在窗口中间断掉（那条"很明显的边界"）。 */
+  display: flex;
+  flex-direction: column;
   /* 视图缩放系数（Ctrl+滚轮，--qj-zoom 由组件注入，默认 1）。
      用字号/行高/内边距相乘实现缩放，不用 zoom/transform——那会移动元素坐标系，
      导致中文输入法候选框定位到窗口左上角。 */
   --qj-zoom: 1;
 }
 
+/* TipTap 的 <EditorContent> 会包一层无类名的 div，它才是滚动容器的
+   flex 子项；不把它撑开，纸面就只跟正文一样高。 */
+.qj-editor-scroll > div {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .qj-editor-content {
-  min-height: 100%;
-  /* 书写纸：纸色底 + 极淡点格（不是网格，是纸的纤维点） */
-  background-color: var(--qj-paper-2);
-  background-image:
-    radial-gradient(color-mix(in srgb, var(--qj-ink-900) 6%, transparent) 0.9px, transparent 0.9px),
-    var(--qj-fiber);
-  background-size:
-    calc(26px * var(--qj-zoom)) calc(26px * var(--qj-zoom)),
-    140px 140px;
+  flex: 1 0 auto;
+  /* 书写纸：半透明纸色 + 极淡点格。
+     纸色不能是实色——实色 + 白点阵会和周围形成一个硬边矩形（"贴了一块板"）。
+     半透明让底层色透上来，纸面的存在感来自点阵和排版留白，而不是一块不同的底色。 */
+  /* 不铺底色：底色一旦存在就一定有一条边（半透明时还会把窗口渐变透进来，
+     上深下浅，那条边反而更明显）。"纸"的感觉只由带渐隐的纹理提供。 */
+  background-color: transparent;
+  /* 点阵与纤维画在 ::before 上，不直接铺在这个元素上——
+     这样才能单独给纹理做"边缘渐隐"，而文字不受 mask 影响。 */
+  position: relative;
+  isolation: isolate;
   padding: calc(34px * var(--qj-zoom)) calc(40px * var(--qj-zoom)) calc(90px * var(--qj-zoom));
   font-size: calc(1.18rem * var(--qj-zoom));
   line-height: 1.9;
@@ -128,6 +144,31 @@ body.qj-window-image-on .qj-menubar {
   caret-color: var(--qj-primary);
   /* 纸张微微内凹的边缘光，替代硬边框 */
   box-shadow: inset 0 1px 0 var(--qj-paper-edge);
+}
+
+/* 纸纹（点阵 + 纤维）。关键在 mask：纹理在离边界 56px 内渐隐，
+   于是它不会在纸上画出一个可见的矩形——以前正是这个矩形让
+   "纸面和背景结合不好"。中间区域纹理照常，够看清是纸。 */
+.qj-editor-content::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(color-mix(in srgb, var(--qj-ink-900) 13%, transparent) 1px, transparent 1px),
+    var(--qj-fiber);
+  background-size:
+    calc(26px * var(--qj-zoom)) calc(26px * var(--qj-zoom)),
+    140px 140px;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+  mask-composite: intersect;
 }
 
 .qj-editor-compact {

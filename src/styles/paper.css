@@ -19,7 +19,9 @@
   --qj-ink-2: var(--qj-ink-600);
   --qj-ink-3: var(--qj-ink-400);
 
-  --qj-paper-edge: rgba(255, 255, 255, 0.85); /* 纸边高光 */
+  /* 纸边高光。浅色纸底上 0.85 的白像光打在纸缘；
+     深色主题下同一个白会变成刺眼的亮线，见文件末尾的 [data-base="dark"] 覆盖。 */
+  --qj-paper-edge: rgba(255, 255, 255, 0.85);
 
   /* ---------- 叠放阴影：近距硬边 + 远距柔光 ---------- */
   --qj-lift-0: none;
@@ -46,6 +48,17 @@
 
   /* 纸张纤维噪点（SVG feTurbulence，极低透明度） */
   --qj-fiber: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+}
+
+/* 深色主题的"纸"：同一道白边在深底上感知亮度高得多，
+   0.85 会变成刺眼亮线，这里压到"只是有一点点"。
+   dataset.base 写在 <html> 上，所以这条选择器命中的就是 :root。 */
+[data-base="dark"] {
+  --qj-paper-edge: rgba(255, 255, 255, 0.12);
+  /* 深色底上的分割线不能是亮的：7% 白实测是 (42,46,54)，
+     而两侧底色只有 (26,30,39)，那条线一眼就跳出来。
+     深色主题用暗线做"凹槽"，面板靠各自底色区分，比画亮线干净得多。 */
+  --qj-hairline: rgba(0, 0, 0, 0.38);
 }
 
 /* ---------- 全局：纸面底 + 纤维 ---------- */
