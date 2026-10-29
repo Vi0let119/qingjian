@@ -95,7 +95,7 @@
   font-size: 0.78rem;
   letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(43, 46, 41, 0.18);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--qj-ink-900) 18%, transparent);
   transition: background var(--qj-t-base) var(--qj-ease-out),
     transform var(--qj-t-fast) var(--qj-ease-out),
     box-shadow var(--qj-t-base) var(--qj-ease-out);
@@ -104,7 +104,7 @@
 .qj-crumb-action:hover {
   background: var(--qj-primary);
   transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(43, 46, 41, 0.2);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--qj-ink-900) 20%, transparent);
 }
 
 .qj-crumb-action:active {
@@ -123,8 +123,8 @@
   pointer-events: none;
   background:
     radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0) 60%),
-    radial-gradient(circle at 50% 50%, rgba(74, 124, 89, 0.16), rgba(74, 124, 89, 0.07));
-  box-shadow: 0 18px 40px -16px rgba(43, 46, 41, 0.4);
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--qj-primary) 16%, transparent), color-mix(in srgb, var(--qj-primary) 7%, transparent));
+  box-shadow: 0 18px 40px -16px color-mix(in srgb, var(--qj-ink-900) 40%, transparent);
   color: var(--qj-primary);
   font-size: 0.92rem;
   font-weight: 600;

@@ -170,7 +170,7 @@ body.qj-window-image-on .qj-tabs-strip {
   letter-spacing: 0.02em;
   cursor: pointer;
   z-index: 30;
-  box-shadow: 0 1px 2px rgba(43, 46, 41, 0.08);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--qj-ink-900) 8%, transparent);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   transition: background var(--qj-t-fast) var(--qj-ease-out),
@@ -221,8 +221,8 @@ body.qj-window-image-on .qj-tabs-strip {
   /* 最上层纸（最亮）：向右投下一道真实的影，表示它压着右边的纸 */
   background: var(--qj-paper-2);
   box-shadow:
-    1px 0 0 rgba(43, 46, 41, 0.055),
-    8px 0 18px -10px rgba(43, 46, 41, 0.28);
+    1px 0 0 color-mix(in srgb, var(--qj-ink-900) 6%, transparent),
+    8px 0 18px -10px color-mix(in srgb, var(--qj-ink-900) 28%, transparent);
 }
 
 .qj-sidebar-header {
@@ -240,7 +240,10 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
   align-items: center;
   gap: 7px;
-  min-width: 0;
+  /* 不能 min-width:0：侧栏头部只有 168px，三个元素抢空间时
+     logo 会被压到 68px，「轻笺」两个字放不下就竖排断行了 */
+  flex: 0 0 auto;
+  white-space: nowrap;
   font-family: var(--qj-serif);
   font-size: 1.5rem;
   font-weight: 700;
@@ -294,12 +297,12 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-sidebar-add {
   background: var(--qj-primary);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--qj-primary) 30%, transparent);
 }
 
 .qj-sidebar-add:hover {
   transform: rotate(90deg);
-  box-shadow: 0 4px 14px rgba(74, 124, 89, 0.4);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--qj-primary) 40%, transparent);
 }
 
 .qj-sidebar-add:active,
@@ -341,7 +344,7 @@ body.qj-window-image-on .qj-tabs-strip {
   letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow:
-    0 1px 2px rgba(43, 46, 41, 0.16),
+    0 1px 2px color-mix(in srgb, var(--qj-ink-900) 16%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     inset 0 -1px 0 rgba(0, 0, 0, 0.12);
   transition: background var(--qj-t-base) var(--qj-ease-out),
@@ -352,14 +355,14 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-fragment-btn:hover {
   background: color-mix(in srgb, var(--qj-primary) 88%, #000);
   box-shadow:
-    0 3px 10px rgba(43, 46, 41, 0.2),
+    0 3px 10px color-mix(in srgb, var(--qj-ink-900) 20%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
   transform: translateY(-1px);
 }
 
 .qj-fragment-btn:active {
   transform: translateY(0) scale(0.985);
-  box-shadow: 0 1px 2px rgba(43, 46, 41, 0.2);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--qj-ink-900) 20%, transparent);
 }
 
 .qj-fragment-btn-icon {
@@ -403,7 +406,7 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-fragment-btn.is-active {
   background: var(--qj-primary);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.26);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--qj-primary) 26%, transparent);
 }
 
 .qj-notebook-list {
@@ -507,6 +510,7 @@ body.qj-window-image-on .qj-tabs-strip {
   width: 100%;
   height: 48px;
   display: block;
+  color: var(--qj-primary);
 }
 
 /* ---------- 笔记列表 ---------- */
@@ -518,9 +522,9 @@ body.qj-window-image-on .qj-tabs-strip {
   /* 中间层纸：比书写区亮、比侧栏暗；左缘接住侧栏投下的影，右缘压着书写区 */
   background: var(--qj-paper-1);
   box-shadow:
-    inset 9px 0 12px -12px rgba(43, 46, 41, 0.4),
-    1px 0 0 rgba(43, 46, 41, 0.05),
-    7px 0 16px -11px rgba(43, 46, 41, 0.24);
+    inset 9px 0 12px -12px color-mix(in srgb, var(--qj-ink-900) 40%, transparent),
+    1px 0 0 color-mix(in srgb, var(--qj-ink-900) 5%, transparent),
+    7px 0 16px -11px color-mix(in srgb, var(--qj-ink-900) 24%, transparent);
 }
 
 .qj-note-list-header {
@@ -637,7 +641,8 @@ body.qj-window-image-on .qj-tabs-strip {
 }
 
 .qj-snippet-mark {
-  background: rgba(249, 166, 32, 0.3);
+  /* 搜索命中高亮：跟着主题强调色走，不写死橙色 */
+  background: color-mix(in srgb, var(--qj-accent) 30%, transparent);
   color: inherit;
   border-radius: 3px;
   padding: 0 1px;
@@ -663,7 +668,7 @@ body.qj-window-image-on .qj-tabs-strip {
   border-radius: 50%;
   background: var(--qj-accent);
   align-self: center;
-  box-shadow: 0 0 0 3px rgba(249, 166, 32, 0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--qj-accent) 18%, transparent);
 }
 
 /* ---------- 标签页与编辑器区 ---------- */
@@ -679,7 +684,7 @@ body.qj-window-image-on .qj-tabs-strip {
   position: relative;
   /* 最底下那张纸：必须有底色——内容区 .qj-module 默认是透明的 */
   background: var(--qj-paper-0);
-  box-shadow: inset 9px 0 12px -12px rgba(43, 46, 41, 0.42);
+  box-shadow: inset 9px 0 12px -12px color-mix(in srgb, var(--qj-ink-900) 42%, transparent);
 }
 
 .qj-tabs-strip {
@@ -942,6 +947,8 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-empty-leaf {
   width: 40px;
   height: 40px;
+  /* 用主色而非写死绿色：叶子是主题的一部分，换主题要跟着变 */
+  color: var(--qj-primary);
   opacity: 0.55;
   margin-bottom: 14px;
 }

@@ -108,7 +108,7 @@ body.qj-window-image-on .qj-menubar {
   /* 书写纸：纸色底 + 极淡点格（不是网格，是纸的纤维点） */
   background-color: var(--qj-paper-2);
   background-image:
-    radial-gradient(rgba(43, 46, 41, 0.055) 0.9px, transparent 0.9px),
+    radial-gradient(color-mix(in srgb, var(--qj-ink-900) 6%, transparent) 0.9px, transparent 0.9px),
     var(--qj-fiber);
   background-size:
     calc(26px * var(--qj-zoom)) calc(26px * var(--qj-zoom)),
@@ -146,7 +146,7 @@ body.qj-window-image-on .qj-menubar {
   /* 压印：铅字轻轻压进纸里 */
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8),
-    0 -1px 0 rgba(43, 46, 41, 0.05);
+    0 -1px 0 color-mix(in srgb, var(--qj-ink-900) 5%, transparent);
 }
 
 .qj-editor-content h1 {
@@ -200,7 +200,7 @@ body.qj-window-image-on .qj-menubar {
 }
 
 .qj-editor-content pre {
-  background: rgba(74, 124, 89, 0.07);
+  background: color-mix(in srgb, var(--qj-primary) 7%, transparent);
   border-radius: var(--qj-radius);
   padding: 14px 18px;
   overflow-x: auto;

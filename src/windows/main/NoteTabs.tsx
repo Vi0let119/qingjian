@@ -37,24 +37,30 @@ export function NoteTabs() {
       <ModuleSurface module="editor" className="qj-tabs-body">
         {openTabs.length === 0 && (
           <div className="qj-empty">
+            {/* 叶子用 currentColor：写死绿色的话，换到枯茶/克莱因蓝等主题时
+                这片叶子还是绿的，跟整体配色打架 */}
             <svg className="qj-empty-leaf qj-leaf-float" viewBox="0 0 48 48" aria-hidden="true">
               <path
                 d="M24 44 C 24 34 27 26 35 20 C 35 29 32 37 24 44 Z"
-                fill="rgba(74,124,89,0.5)"
+                fill="currentColor"
+                opacity="0.5"
               />
               <path
                 d="M24 44 C 24 36 21 30 14 26 C 15 34 19 40 24 44 Z"
-                fill="rgba(107,154,116,0.42)"
+                fill="currentColor"
+                opacity="0.32"
               />
               <path
                 d="M24 44 C 23 38 24 30 26 22"
-                stroke="rgba(74,124,89,0.38)"
+                stroke="currentColor"
                 strokeWidth="2"
                 fill="none"
                 strokeLinecap="round"
+                opacity="0.38"
               />
             </svg>
-            <p className="qj-empty-title">轻笺</p>
+            {/* 不重复放应用名：左上角已经有「轻笺」了，
+                同一屏出现两次品牌名只会让人以为渲染重影 */}
             <p className="qj-empty-hint">选择左侧笔记开始书写，或新建一篇笔记。</p>
           </div>
         )}

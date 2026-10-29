@@ -23,13 +23,13 @@
 
   /* ---------- 叠放阴影：近距硬边 + 远距柔光 ---------- */
   --qj-lift-0: none;
-  --qj-lift-1: 0 1px 1px rgba(43, 46, 41, 0.04), 0 2px 6px rgba(43, 46, 41, 0.045);
-  --qj-lift-2: 0 1px 2px rgba(43, 46, 41, 0.06), 0 4px 14px rgba(43, 46, 41, 0.07);
-  --qj-lift-3: 0 2px 4px rgba(43, 46, 41, 0.08), 0 10px 28px rgba(43, 46, 41, 0.1);
+  --qj-lift-1: 0 1px 1px color-mix(in srgb, var(--qj-ink-900) 4%, transparent), 0 2px 6px color-mix(in srgb, var(--qj-ink-900) 4%, transparent);
+  --qj-lift-2: 0 1px 2px color-mix(in srgb, var(--qj-ink-900) 6%, transparent), 0 4px 14px color-mix(in srgb, var(--qj-ink-900) 7%, transparent);
+  --qj-lift-3: 0 2px 4px color-mix(in srgb, var(--qj-ink-900) 8%, transparent), 0 10px 28px color-mix(in srgb, var(--qj-ink-900) 10%, transparent);
 
   /* 发丝线：改用墨色阶，比原来的半透明绿更中性、更"纸" */
-  --qj-hairline: rgba(43, 46, 41, 0.075);
-  --qj-hairline-strong: rgba(43, 46, 41, 0.14);
+  --qj-hairline: color-mix(in srgb, var(--qj-ink-900) 8%, transparent);
+  --qj-hairline-strong: color-mix(in srgb, var(--qj-ink-900) 14%, transparent);
 
   /* ---------- 圆角：纸页更方一点，圆角过大显廉价 ---------- */
   --qj-r-xs: 4px;
@@ -102,10 +102,13 @@ body {
 
 /* ---------- 压印标题（铅字压进纸里） ---------- */
 
+/* 压印靠"下方一道亮边、上方一道暗边"制造凹凸。
+   但颜色必须是主题色，不能写死白色——在深色主题 / 彩色 logo 上，
+   纯白 shadow 会变成文字外圈一圈白边（橙字尤其明显，看起来像重影）。 */
 .qj-letterpress {
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.75),
-    0 -1px 0 rgba(43, 46, 41, 0.06);
+    0 1px 0 color-mix(in srgb, var(--qj-paper-2) 55%, transparent),
+    0 -1px 0 color-mix(in srgb, var(--qj-ink-900) 10%, transparent);
 }
 
 /* ---------- 墨条：hover/选中时从中心生长的左侧指示 ---------- */
@@ -150,10 +153,10 @@ body {
 
 @keyframes qj-halo {
   0% {
-    box-shadow: 0 0 0 0 rgba(74, 124, 89, 0.34);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--qj-primary) 34%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 7px rgba(74, 124, 89, 0);
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--qj-primary) 0%, transparent);
   }
 }
 

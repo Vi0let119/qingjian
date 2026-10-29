@@ -59,7 +59,7 @@
   border-radius: 999px;
   cursor: pointer;
   z-index: 50;
-  box-shadow: 0 4px 16px rgba(74, 124, 89, 0.35);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--qj-primary) 35%, transparent);
   animation: qj-rise-in 0.3s var(--qj-ease);
 }
 
@@ -255,7 +255,7 @@
   background: var(--qj-primary);
   border-color: var(--qj-primary);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--qj-primary) 30%, transparent);
 }
 
 .qj-module-controls {
@@ -351,7 +351,7 @@
   border-radius: 14px;
   overflow: hidden;
   height: 230px;
-  box-shadow: inset 0 0 24px rgba(74, 124, 89, 0.04);
+  box-shadow: inset 0 0 24px color-mix(in srgb, var(--qj-primary) 4%, transparent);
 }
 
 .qj-settings-preview .qj-module-content {
@@ -384,7 +384,7 @@
 }
 
 .qj-preview-item.is-active {
-  background: rgba(74, 124, 89, 0.16);
+  background: color-mix(in srgb, var(--qj-primary) 16%, transparent);
   color: var(--qj-primary);
   font-weight: 600;
   box-shadow: inset 2.5px 0 0 var(--qj-primary);
@@ -393,7 +393,7 @@
 .qj-preview-frag {
   margin-top: auto;
   padding: 7px 12px;
-  border: 1px solid rgba(74, 124, 89, 0.45);
+  border: 1px solid color-mix(in srgb, var(--qj-primary) 45%, transparent);
   border-radius: 999px;
   color: var(--qj-primary);
   font-size: 12px;
@@ -449,7 +449,7 @@
 
 /* 编辑器预览 */
 .qj-preview-editor {
-  background-image: radial-gradient(rgba(74, 124, 89, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(color-mix(in srgb, var(--qj-primary) 5%, transparent) 1px, transparent 1px);
   background-size: 22px 22px;
   font-size: 13.5px;
   line-height: 1.8;

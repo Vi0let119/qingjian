@@ -1,7 +1,7 @@
 {
   "version": 1,
   "name": "zhizi",
-  "base": "light",
+  "base": "dark",
   "window": {
     "effect": "none",
     "state": "active"
@@ -9,17 +9,18 @@
   "tokens": {
     "color": {
       "primary": "#FEC13F",
-      "accent": "#2B94AB",
-      "danger": "#B3402F",
-      "bg": "#F3F2EF",
-      "surface": "#F9F9F8",
-      "text": "#3A372C",
-      "textSecondary": "#0F0E0B",
+      "brand": "#FEC13F",
+      "accent": "#5CC0D6",
+      "danger": "#E8705D",
+      "bg": "#211D15",
+      "surface": "#2D291F",
+      "text": "#FFFFFF",
+      "textSecondary": "#FFFFFF",
       "border": "rgba(254,193,63,0.22)",
-      "desk": "#E8E4DB",
+      "desk": "#18150F",
       "glow": "255,209,112",
-      "bubble": "rgba(254,193,63,0.1)",
-      "bubbleEdge": "rgba(254,193,63,0.34)",
+      "bubble": "rgba(254,193,63,0.13)",
+      "bubbleEdge": "rgba(254,193,63,0.42)",
       "ripple": "rgba(254,193,63,0.42)"
     },
     "font": {
@@ -27,7 +28,7 @@
       "size": "14px"
     },
     "radius": "10px",
-    "shadow": "0 2px 12px rgba(43,43,40,0.08)"
+    "shadow": "0 2px 12px rgba(0,0,0,0.32)"
   },
   "modules": {
     "sidebar": {

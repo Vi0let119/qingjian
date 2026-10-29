@@ -52,7 +52,7 @@ export function Sidebar() {
   return (
     <aside className="qj-sidebar">
       <header className="qj-sidebar-header">
-        <span className="qj-logo qj-letterpress">
+        <span className="qj-logo">
           <svg className="qj-logo-leaf" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 21 C 12 15 14 10 19 7 C 19 12 17 17 12 21 Z" fill="currentColor" />
             <path
@@ -197,9 +197,10 @@ export function Sidebar() {
       </nav>
 
       <footer className="qj-sidebar-footer" aria-hidden="true">
-        {/* 低饱和植物线稿点缀（主题视觉规范） */}
+        {/* 低饱和植物线稿点缀。颜色跟随主题（currentColor + accent），
+            写死绿色的话在克莱因蓝/深酒红主题里会留下一撮突兀的绿 */}
         <svg viewBox="0 0 120 60" className="qj-plant">
-          <g stroke="rgba(74,124,89,0.35)" strokeWidth="1.6" fill="none" strokeLinecap="round">
+          <g stroke="currentColor" opacity="0.35" strokeWidth="1.6" fill="none" strokeLinecap="round">
             <path d="M60 56 C 58 40 62 28 78 22" />
             <path d="M60 56 C 62 42 56 32 44 28" />
             <path d="M78 22 C 70 20 66 14 66 6" />
@@ -207,7 +208,7 @@ export function Sidebar() {
             <path d="M44 28 C 38 24 36 18 38 10" />
             <path d="M44 28 C 50 30 54 34 56 42" />
           </g>
-          <circle cx="92" cy="6" r="2.4" fill="rgba(249,166,32,0.7)" />
+          <circle cx="92" cy="6" r="2.4" fill="var(--qj-accent)" opacity="0.7" />
         </svg>
       </footer>
     </aside>

@@ -61,14 +61,14 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(74, 124, 89, 0.16);
+  background: color-mix(in srgb, var(--qj-primary) 16%, transparent);
   border-radius: var(--qj-r-full);
   border: 3px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(74, 124, 89, 0.3);
+  background: color-mix(in srgb, var(--qj-primary) 30%, transparent);
   background-clip: content-box;
 }
 

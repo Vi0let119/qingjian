@@ -1,7 +1,7 @@
 {
   "version": 1,
   "name": "shiyang",
-  "base": "light",
+  "base": "dark",
   "window": {
     "effect": "none",
     "state": "active"
@@ -9,17 +9,18 @@
   "tokens": {
     "color": {
       "primary": "#FAC7B7",
-      "accent": "#279B7D",
-      "danger": "#B3402F",
-      "bg": "#F3F0EF",
-      "surface": "#F9F8F8",
-      "text": "#3A2F2C",
-      "textSecondary": "#0F0C0B",
+      "brand": "#FAC7B7",
+      "accent": "#5CD6B6",
+      "danger": "#E8705D",
+      "bg": "#211815",
+      "surface": "#2D231F",
+      "text": "#FFFFFF",
+      "textSecondary": "#FFFFFF",
       "border": "rgba(250,199,183,0.22)",
-      "desk": "#E8DEDB",
+      "desk": "#18110F",
       "glow": "253,147,114",
-      "bubble": "rgba(250,199,183,0.1)",
-      "bubbleEdge": "rgba(250,199,183,0.34)",
+      "bubble": "rgba(250,199,183,0.13)",
+      "bubbleEdge": "rgba(250,199,183,0.42)",
       "ripple": "rgba(250,199,183,0.42)"
     },
     "font": {
@@ -27,7 +28,7 @@
       "size": "14px"
     },
     "radius": "10px",
-    "shadow": "0 2px 12px rgba(43,43,40,0.08)"
+    "shadow": "0 2px 12px rgba(0,0,0,0.32)"
   },
   "modules": {
     "sidebar": {

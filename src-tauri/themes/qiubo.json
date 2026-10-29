@@ -1,7 +1,7 @@
 {
   "version": 1,
   "name": "qiubo",
-  "base": "light",
+  "base": "dark",
   "window": {
     "effect": "none",
     "state": "active"
@@ -9,17 +9,18 @@
   "tokens": {
     "color": {
       "primary": "#84BB9F",
-      "accent": "#4795B6",
-      "danger": "#B3402F",
-      "bg": "#EFF3F1",
-      "surface": "#F8F9F9",
-      "text": "#2C3A33",
-      "textSecondary": "#0B0F0D",
+      "brand": "#84BB9F",
+      "accent": "#A5CCDC",
+      "danger": "#E8705D",
+      "bg": "#15211B",
+      "surface": "#1F2D26",
+      "text": "#FFFFFF",
+      "textSecondary": "#FFFFFF",
       "border": "rgba(132,187,159,0.22)",
-      "desk": "#DBE8E2",
+      "desk": "#0F1813",
       "glow": "156,211,183",
-      "bubble": "rgba(132,187,159,0.1)",
-      "bubbleEdge": "rgba(132,187,159,0.34)",
+      "bubble": "rgba(132,187,159,0.13)",
+      "bubbleEdge": "rgba(132,187,159,0.42)",
       "ripple": "rgba(132,187,159,0.42)"
     },
     "font": {
@@ -27,7 +28,7 @@
       "size": "14px"
     },
     "radius": "10px",
-    "shadow": "0 2px 12px rgba(43,43,40,0.08)"
+    "shadow": "0 2px 12px rgba(0,0,0,0.32)"
   },
   "modules": {
     "sidebar": {
