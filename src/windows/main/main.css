@@ -208,6 +208,8 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-main-daily > .qj-module-content > * {
   flex: 1;
   min-width: 0;
+  /* 同理：不加 min-height:0 的话，子项会被内容撑高而不是内部滚动 */
+  min-height: 0;
 }
 
 /* ---------- 侧栏 ---------- */
@@ -670,6 +672,10 @@ body.qj-window-image-on .qj-tabs-strip {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* flex 子项默认 min-height:auto，内容一长就把自己撑到内容高度，
+     导致内部的 .qj-editor-scroll 永远不产生滚动条（滚轮因此完全没反应）。
+     .qj-tab-pane 早前修过同样的坑，这一层漏了。 */
+  min-height: 0;
   position: relative;
   /* 最底下那张纸：必须有底色——内容区 .qj-module 默认是透明的 */
   background: var(--qj-paper-0);
