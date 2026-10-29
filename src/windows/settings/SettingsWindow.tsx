@@ -43,6 +43,11 @@ const PRESET_LABELS: Record<string, string> = {
   jiuhong: "深酒红",
   klein: "克莱因蓝",
   meiye: "魅夜",
+  pulu: "普鲁士灰",
+  zhizi: "栀子",
+  shiyang: "十样锦",
+  hermes: "爱马仕橙",
+  hupe: "琥珀",
 };
 
 export default function SettingsWindow() {

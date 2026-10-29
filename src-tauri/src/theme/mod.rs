@@ -46,6 +46,13 @@ pub const BUILTIN_PRESETS: &[(&str, &str)] = &[
     ("jiuhong", include_str!("../../themes/jiuhong.json")),
     ("klein", include_str!("../../themes/klein.json")),
     ("meiye", include_str!("../../themes/meiye.json")),
+    // 中式传统色配对：雾灰 × 普鲁士蓝、栀子 × 绀蝶、十样锦 × 烟墨色
+    ("pulu", include_str!("../../themes/pulu.json")),
+    ("zhizi", include_str!("../../themes/zhizi.json")),
+    ("shiyang", include_str!("../../themes/shiyang.json")),
+    // 高饱和撞色：深蓝 × 爱马仕橙、琥珀黄 × 青雀头戴
+    ("hermes", include_str!("../../themes/hermes.json")),
+    ("hupe", include_str!("../../themes/hupe.json")),
 ];
 
 /// 预设自带的内容区背景图（预设 id, 文件名, 字节）。

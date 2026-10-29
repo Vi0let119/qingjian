@@ -8,19 +8,19 @@
   },
   "tokens": {
     "color": {
-      "primary": "#56A27C",
+      "primary": "#84BB9F",
       "accent": "#4795B6",
       "danger": "#B3402F",
       "bg": "#EFF3F1",
       "surface": "#F8F9F9",
       "text": "#2C3A33",
       "textSecondary": "#0B0F0D",
-      "border": "rgba(86,162,124,0.22)",
+      "border": "rgba(132,187,159,0.22)",
       "desk": "#DBE8E2",
-      "glow": "155,213,184",
-      "bubble": "rgba(86,162,124,0.1)",
-      "bubbleEdge": "rgba(86,162,124,0.34)",
-      "ripple": "rgba(86,162,124,0.42)"
+      "glow": "156,211,183",
+      "bubble": "rgba(132,187,159,0.1)",
+      "bubbleEdge": "rgba(132,187,159,0.34)",
+      "ripple": "rgba(132,187,159,0.42)"
     },
     "font": {
       "family": "\"Segoe UI\", \"Microsoft YaHei UI\", system-ui, sans-serif",
