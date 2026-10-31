@@ -247,9 +247,9 @@ impl DailyState {
             content: String::new(),
         };
 
-        let path = day_path(day)?;
-        splice_section(&path, &section).map_err(|e| format!("写入当日文件失败: {e}"))?;
-
+        // 只登记，不落盘：以前的实现注册即写一个空块进当日文件，
+        // 窗口被强杀 / 进程崩溃时 Destroyed 钩子跑不到，那个空块就永久留在文件里，
+        // 每日碎片里于是出现空白页。改成首次 save 时才写（见 save 的 need_insert）。
         let id = section.id.clone();
         store.sections.push(section);
         self.label_to_section
@@ -279,9 +279,21 @@ impl DailyState {
             store.day = day;
         }
 
+        // 全空白不落盘：配合同样去掉了 register 里的写块，整个生命周期里
+        // 只有"真的有内容"才会在当日文件里出现一个块。
+        // 清空已有块时则要删文件里的块，否则内容删了、空块还留着。
+        let was_empty = store.sections[idx].content.trim().is_empty();
         store.sections[idx].content = content;
         let path = day_path(day)?;
         let section = store.sections[idx].clone();
+
+        if section.content.trim().is_empty() {
+            if !was_empty {
+                remove_section_from_file(&path, section_id).map_err(|e| format!("清空碎片失败: {e}"))?;
+            }
+            return Ok(());
+        }
+
         splice_section(&path, &section).map_err(|e| format!("保存碎片失败: {e}"))
     }
 
@@ -457,13 +469,16 @@ mod tests {
     fn empty_section_removed_on_unregister() {
         with_test_env(|| {
             let state = DailyState::new();
-            let _id = state.register("frag-x").unwrap();
+            let id = state.register("frag-x").unwrap();
+            // 先写点东西再删掉：内容清空时块就应消失
+            state.save(&id, "临时".into()).unwrap();
+            state.save(&id, "".into()).unwrap();
             state.unregister_by_label("frag-x").unwrap();
             let path = day_path(today()).unwrap();
-            let content = fs::read_to_string(&path).unwrap();
+            let content = fs::read_to_string(&path).unwrap_or_default();
             assert!(!content.contains("qj:section"), "空块应被移除");
-            // 文件头保留
-            assert!(content.starts_with("# "));
+            // 文件头保留（写过就有头）
+            assert!(content.is_empty() || content.starts_with("# "));
         });
     }
 
@@ -482,6 +497,48 @@ mod tests {
                 content.matches("<!-- qj:section:").count(),
                 2,
                 "只应有一个块"
+            );
+        });
+    }
+
+    #[test]
+    fn register_alone_leaves_no_file() {
+        with_test_env(|| {
+            let state = DailyState::new();
+            let id = state.register("frag-blank").unwrap();
+            let path = day_path(today()).unwrap();
+            assert!(
+                !path.exists() || fs::read_to_string(&path).unwrap().trim().is_empty(),
+                "只注册不输入时，不该在当日文件里留下任何块"
+            );
+            // 关闭窗口同样不该留东西
+            state.unregister(&id).unwrap();
+            assert!(!path.exists() || fs::read_to_string(&path).unwrap().trim().is_empty());
+        });
+    }
+
+    #[test]
+    fn save_writes_block_on_first_content_and_removes_on_blank() {
+        with_test_env(|| {
+            let state = DailyState::new();
+            let id = state.register("frag-x").unwrap();
+            let path = day_path(today()).unwrap();
+
+            // 空白内容不落盘
+            state.save(&id, "   \n  ".into()).unwrap();
+            assert!(!path.exists() || fs::read_to_string(&path).unwrap().trim().is_empty());
+
+            // 有内容才写
+            state.save(&id, "第一段".into()).unwrap();
+            let content = fs::read_to_string(&path).unwrap();
+            assert!(content.contains("第一段"));
+
+            // 再清空 → 块要被删掉，不能留空壳
+            state.save(&id, "".into()).unwrap();
+            let content = fs::read_to_string(&path).unwrap_or_default();
+            assert!(
+                !content.contains(&id),
+                "清空后块必须从文件里移除，否则每日碎片会出现空白页"
             );
         });
     }

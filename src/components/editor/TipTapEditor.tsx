@@ -12,6 +12,7 @@ import { FontSize } from "./extensions/fontSize";
 import {
   createImageExtension,
   createMarkdownExtension,
+  restoreBlankParagraphs,
   rewriteImageSrcs,
   serializeMarkdown,
 } from "./extensions/markdown";
@@ -159,7 +160,8 @@ export function TipTapEditor({
       createMarkdownExtension(),
       Placeholder.configure({ placeholder }),
     ],
-    content: initialContent,
+    // 占位段落还原成真空段落：多个回车才不会被 Markdown 解析丢掉
+    content: restoreBlankParagraphs(initialContent),
     editorProps: {
       attributes: {
         class: `qj-editor-content${compact ? " qj-editor-compact" : ""}`,
