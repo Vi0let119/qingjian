@@ -126,6 +126,7 @@ pub fn run() {
             commands::notes::rename_note,
             commands::notes::delete_note,
             commands::notes::search_notes,
+            commands::notes::search_all_notes,
             commands::attachments::import_attachment,
             commands::attachments::import_attachment_from_path,
             commands::attachments::delete_attachment,

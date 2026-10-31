@@ -20,6 +20,17 @@ export interface NoteRead {
   absPath: string;
 }
 
+/** 全文检索命中项 */
+export interface SearchHit {
+  /** 所在笔记本（全局搜索靠它定位） */
+  notebook: string;
+  fileName: string;
+  title: string;
+  snippet: string;
+  /** 命中次数，用于排序 */
+  hits: number;
+}
+
 // ---------- 通用设置（与 Rust commands/theme.rs 的 AppSettings 对齐） ----------
 
 export interface AppSettings {
@@ -63,8 +74,11 @@ export const api = {
     invoke<NoteMeta>("rename_note", { notebook, oldFile, newTitle }),
   deleteNote: (notebook: string, fileName: string) =>
     invoke<void>("delete_note", { notebook, fileName }),
+  /** 全局检索：跨所有笔记本，按命中次数降序 */
+  searchAllNotes: (query: string, limit?: number) =>
+    invoke<SearchHit[]>("search_all_notes", { query, limit: limit ?? null }),
   searchNotes: (notebook: string, query: string) =>
-    invoke<{ fileName: string; title: string; snippet: string }[]>("search_notes", {
+    invoke<SearchHit[]>("search_notes", {
       notebook,
       query,
     }),

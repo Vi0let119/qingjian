@@ -24,6 +24,13 @@ interface NoteStore {
   pendingReveal: { notebook: string; fileName: string; query: string } | null;
   setPendingReveal: (r: { notebook: string; fileName: string; query: string } | null) => void;
 
+  /** 侧栏树：笔记本名 → 该本下的笔记（展开时才加载） */
+  notesByNotebook: Record<string, NoteMeta[]>;
+  /** 已展开的笔记本（侧栏树用） */
+  expandedNotebooks: string[];
+  toggleNotebookExpanded: (name: string) => Promise<void>;
+  loadNotebookNotes: (name: string) => Promise<void>;
+
   init: () => Promise<void>;
   selectNotebook: (name: string) => Promise<void>;
   createNotebook: (name: string) => Promise<void>;
@@ -59,6 +66,32 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   error: null,
   pendingReveal: null,
   setPendingReveal: (r) => set({ pendingReveal: r }),
+  notesByNotebook: {},
+  expandedNotebooks: [],
+
+  /** 侧栏树展开/收起：展开时按需加载该本的笔记 */
+  toggleNotebookExpanded: async (name) => {
+    const { expandedNotebooks } = get();
+    if (expandedNotebooks.includes(name)) {
+      set({ expandedNotebooks: expandedNotebooks.filter((n) => n !== name) });
+      return;
+    }
+    set({ expandedNotebooks: [...expandedNotebooks, name] });
+    await get().loadNotebookNotes(name);
+  },
+
+  /** 拉取某个本的笔记列表并写进树缓存（展开 / 增删改后都用它刷新） */
+  loadNotebookNotes: async (name) => {
+    try {
+      const notes = await api.listNotes(name);
+      // 写缓存时再次读 get()：等待期间可能已有别的本的列表写进来，
+      // 用展开时捕获的旧快照合并会把它们抹掉
+      set({ notesByNotebook: { ...get().notesByNotebook, [name]: notes } });
+      if (get().activeNotebook === name) set({ notes });
+    } catch (e) {
+      set({ error: String(e) });
+    }
+  },
 
   init: async () => {
     try {
@@ -73,12 +106,9 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
   selectNotebook: async (name) => {
     set({ activeNotebook: name });
-    try {
-      const notes = await api.listNotes(name);
-      set({ notes, error: null });
-    } catch (e) {
-      set({ error: String(e) });
-    }
+    // 统一走 loadNotebookNotes：它同时更新平铺 notes 和侧栏树缓存，
+    // 避免两处各自拉一遍列表后互相覆盖
+    await get().loadNotebookNotes(name);
   },
 
   createNotebook: async (name) => {

@@ -6,6 +6,7 @@ import { confirmAction } from "../../lib/confirm";
 import { openSettingsWindow } from "./openSettings";
 import {
   IconCalendar,
+  IconChevronRight,
   IconGear,
   IconNotebook,
   IconPencil,
@@ -20,12 +21,20 @@ import { useWheelScroll } from "../../lib/useWheelScroll";
 
 export function Sidebar() {
   const dailyBrowserOpen = useFragmentStore((s) => s.dailyBrowserOpen);
+  const searchQuery = useFragmentStore((s) => s.searchQuery);
+  const setSearchQuery = useFragmentStore((s) => s.setSearchQuery);
   // WebView2 滚轮接管
   const notebookListRef = useRef<HTMLElement>(null);
   useWheelScroll(notebookListRef);
   const notebooks = useNoteStore((s) => s.notebooks);
   const activeNotebook = useNoteStore((s) => s.activeNotebook);
   const selectNotebook = useNoteStore((s) => s.selectNotebook);
+  // 侧栏树：展开状态 + 各本笔记缓存 + 当前打开的标签
+  const expandedNotebooks = useNoteStore((s) => s.expandedNotebooks);
+  const notesByNotebook = useNoteStore((s) => s.notesByNotebook);
+  const toggleNotebookExpanded = useNoteStore((s) => s.toggleNotebookExpanded);
+  const openNote = useNoteStore((s) => s.openNote);
+  const activeTabId = useNoteStore((s) => s.activeTabId);
   const createNotebook = useNoteStore((s) => s.createNotebook);
   const renameNotebook = useNoteStore((s) => s.renameNotebook);
   const deleteNotebook = useNoteStore((s) => s.deleteNotebook);
@@ -83,6 +92,34 @@ export function Sidebar() {
         </span>
       </header>
 
+      {/* 搜索：全局范围（中间栏移除后不再有"当前笔记本"的概念）。
+          结果占用内容区，清空后回到原来那篇笔记。 */}
+      <div className="qj-sidebar-search">
+        <span className="qj-sidebar-search-icon" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="M16 16l4.5 4.5" />
+          </svg>
+        </span>
+        <input
+          className="qj-sidebar-search-input"
+          placeholder="搜索全部笔记"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            className="qj-sidebar-search-clear"
+            title="清空搜索"
+            onClick={() => setSearchQuery("")}
+          >
+            ×
+          </button>
+        )}
+      </div>
+
       {adding && (
         <div className="qj-sidebar-add-row">
           <input
@@ -131,14 +168,23 @@ export function Sidebar() {
       </div>
 
       <nav className="qj-notebook-list" ref={notebookListRef}>
-        {notebooks.map((nb) => (
+        {notebooks.map((nb) => {
+          const expanded = expandedNotebooks.includes(nb.name);
+          const children = notesByNotebook[nb.name] ?? [];
+          return (
+          <div key={nb.name} className="qj-nb-group">
           <div
-            key={nb.name}
-            className={`qj-notebook-item qj-ink-bar${nb.name === activeNotebook ? " is-active" : ""}`}
+            className={`qj-notebook-item qj-ink-bar${nb.name === activeNotebook ? " is-active" : ""}${expanded ? " is-expanded" : ""}`}
             onMouseDown={() => {
               // 碎片浏览视图中点笔记本 → 直接回到笔记模块，无需先"返回笔记"
               useFragmentStore.getState().closeDailyBrowser();
-              void selectNotebook(nb.name);
+              // 选中即展开（同一个动作，避免两个函数各拉一次笔记列表）
+              if (nb.name !== activeNotebook) {
+                void selectNotebook(nb.name);
+                if (!expanded) void toggleNotebookExpanded(nb.name);
+              } else {
+                void toggleNotebookExpanded(nb.name);
+              }
             }}
           >
             {editingName === nb.name ? (
@@ -159,6 +205,10 @@ export function Sidebar() {
               />
             ) : (
               <>
+                {/* 展开箭头：不显示的话用户不知道笔记本可以点开 */}
+                <span className="qj-nb-caret" aria-hidden="true">
+                  <IconChevronRight size={11} />
+                </span>
                 <span className="qj-notebook-icon">
                   <IconNotebook size={13} />
                 </span>
@@ -193,7 +243,31 @@ export function Sidebar() {
               </>
             )}
           </div>
-        ))}
+          {/* 展开后的笔记子项：点开笔记本就地显示它的笔记，
+              不再需要中间那栏笔记列表 */}
+          {expanded && (
+            <ul className="qj-nb-children">
+              {children.length === 0 && <li className="qj-nb-empty">还没有笔记</li>}
+              {children.map((n) => (
+                <li key={n.fileName}>
+                  <button
+                    type="button"
+                    className={`qj-nb-note${activeTabId === `${nb.name}/${n.fileName}` ? " is-active" : ""}`}
+                    title={n.title}
+                    onMouseDown={() => {
+                      useFragmentStore.getState().closeDailyBrowser();
+                      openNote(nb.name, n.fileName);
+                    }}
+                  >
+                    <span className="qj-nb-note-title">{n.title}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          </div>
+          );
+        })}
       </nav>
 
       <footer className="qj-sidebar-footer" aria-hidden="true">

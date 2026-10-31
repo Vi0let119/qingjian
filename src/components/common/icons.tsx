@@ -130,6 +130,15 @@ export function IconChevronLeft({ size = 14, className }: IconProps) {
   );
 }
 
+/** 右向箭头（树形展开） */
+export function IconChevronRight({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M9.5 5.5L16 12l-6.5 6.5" />
+    </svg>
+  );
+}
+
 /** 加号（新建） */
 export function IconPlus({ size = 15, className }: IconProps) {
   return (

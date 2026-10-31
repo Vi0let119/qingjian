@@ -2,8 +2,8 @@
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Sidebar } from "./Sidebar";
-import { NoteList } from "./NoteList";
 import { NoteTabs } from "./NoteTabs";
+import { SearchResults } from "./SearchResults";
 import { DailyBrowser } from "./DailyBrowser";
 import { useNoteStore } from "../../stores/useNoteStore";
 import { useFragmentStore } from "../../stores/useFragmentStore";
@@ -12,7 +12,7 @@ import { BubbleWorkspace } from "../../components/bubble/BubbleWorkspace";
 import { ModuleSurface } from "../../components/theme/ModuleSurface";
 import { Onboarding } from "./Onboarding";
 import { openSettingsWindow } from "./openSettings";
-import { IconGear, IconChevronLeft } from "../../components/common/icons";
+import { IconGear } from "../../components/common/icons";
 import "./main.css";
 
 /**
@@ -71,6 +71,9 @@ function Divider({
   );
 }
 
+/** 展开笔记本时侧栏的最小宽度：169px 容不下笔记标题 */
+const EXPANDED_SIDEBAR_W = 240;
+
 export function MainWindow() {
   const init = useNoteStore((s) => s.init);
   const error = useNoteStore((s) => s.error);
@@ -90,15 +93,6 @@ export function MainWindow() {
     const v = Number(raw);
     return Number.isFinite(v) && v > 0 ? v : 224;
   });
-  const [noteListW, setNoteListW] = useState(() => {
-    const raw = localStorage.getItem("qj-notelist-w");
-    if (raw === null) return 284;
-    const v = Number(raw);
-    // 0 是合法的"收起"状态（双击分隔条可收起/展开），但"收起"必须看得见——
-    // 见下方 collapsed 提示条。以前的坑是收起了却没有任何提示，
-    // 用户以为笔记本里的笔记丢了（数据在，只是整栏宽 0px）。
-    return Number.isFinite(v) && v >= 0 ? v : 284;
-  });
   // 首次启动教程（仅显示一次）
   const [onboardingDone, setOnboardingDone] = useState(
     () => localStorage.getItem("qj-onboarding-done") !== null
@@ -106,9 +100,6 @@ export function MainWindow() {
   useEffect(() => {
     localStorage.setItem("qj-sidebar-w", String(sidebarW));
   }, [sidebarW]);
-  useEffect(() => {
-    localStorage.setItem("qj-notelist-w", String(noteListW));
-  }, [noteListW]);
 
   useEffect(() => {
     void init();
@@ -177,9 +168,13 @@ export function MainWindow() {
     useFragmentStore.setState({ error: null });
   };
 
-  const gridColumns = dailyBrowserOpen
-    ? `${sidebarW}px 1fr`
-    : `${sidebarW}px ${noteListW}px 1fr`;
+  const hasExpanded = useNoteStore((s) => s.expandedNotebooks.length > 0);
+  const searchQuery = useFragmentStore((s) => s.searchQuery);
+  // 两栏：侧栏 + 内容区（笔记列表已并入侧栏）。
+  // 有笔记本展开时侧栏加宽，否则 169px 宽不下"笔记标题"——
+  // 展开出笔记后条目会翻倍，窄栏里标题只能被截成两三个字。
+  const effectiveSidebarW = hasExpanded ? Math.max(sidebarW, EXPANDED_SIDEBAR_W) : sidebarW;
+  const gridColumns = `${effectiveSidebarW}px 1fr`;
 
   // ---------- 气泡视图（主视图）----------
   // 整个窗口是一块可漫游的画布，三栏边框布局在这里不存在。
@@ -283,39 +278,19 @@ export function MainWindow() {
         left={sidebarW}
         onMouseDown={(e) => startDrag(e, sidebarW, 160, 420, setSidebarW)}
       />
+      {/* 中间那栏笔记列表已取消：笔记作为子项挂在侧栏的笔记本下面 */}
       {dailyBrowserOpen ? (
         <ModuleSurface module="tabs" className="qj-main-daily qj-reveal qj-reveal-2">
           <DailyBrowser />
         </ModuleSurface>
+      ) : searchQuery.trim() ? (
+        <ModuleSurface module="tabs" className="qj-main-tabs qj-reveal qj-reveal-3">
+          <SearchResults />
+        </ModuleSurface>
       ) : (
-        <>
-          <ModuleSurface module="noteList" className="qj-main-notelist qj-reveal qj-reveal-2">
-            <NoteList />
-            {/* 收起时给一个可见的把手：以前整栏宽度为 0、又没有任何提示，
-                用户会以为笔记本里的笔记没了（其实数据都在） */}
-            {noteListW === 0 && (
-              <button
-                type="button"
-                className="qj-notelist-collapsed"
-                title="展开笔记列表"
-                onClick={() => setNoteListW(284)}
-              >
-                <span className="qj-collapsed-arrow">
-                  <IconChevronLeft size={13} />
-                </span>
-                笔记列表
-              </button>
-            )}
-          </ModuleSurface>
-          <Divider
-            left={sidebarW + noteListW}
-            onMouseDown={(e) => startDrag(e, noteListW, 200, 520, setNoteListW, true)}
-            onDoubleClick={() => setNoteListW((w) => (w === 0 ? 284 : 0))}
-          />
-          <ModuleSurface module="tabs" className="qj-main-tabs qj-reveal qj-reveal-3">
-            <NoteTabs />
-          </ModuleSurface>
-        </>
+        <ModuleSurface module="tabs" className="qj-main-tabs qj-reveal qj-reveal-3">
+          <NoteTabs />
+        </ModuleSurface>
       )}
       {errorMsg && (
         <div className="qj-error-bar" onClick={clearError}>

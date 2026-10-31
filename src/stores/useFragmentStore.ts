@@ -18,6 +18,10 @@ interface FragmentStore {
   /** 切换（侧栏按钮用：进入/返回） */
   toggleDailyBrowser: () => void;
 
+  /** 侧栏搜索词：非空时内容区显示搜索结果，清空后回到原笔记 */
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+
   error: string | null;
 
   /** 新建碎片窗口（可多开；重复点击各开一个） */
@@ -32,6 +36,9 @@ export const useFragmentStore = create<FragmentStore>((set) => ({
   openDailyBrowser: () => set({ dailyBrowserOpen: true }),
   closeDailyBrowser: () => set({ dailyBrowserOpen: false }),
   toggleDailyBrowser: () => set((s) => ({ dailyBrowserOpen: !s.dailyBrowserOpen })),
+
+  searchQuery: "",
+  setSearchQuery: (q) => set({ searchQuery: q }),
 
   error: null,
 

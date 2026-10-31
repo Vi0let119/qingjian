@@ -336,41 +336,82 @@ pub fn rename_note(notebook: String, old_file: String, new_title: String) -> Res
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchHit {
+    /** 所在笔记本。单笔记本搜索时前端可忽略，全局搜索必须靠它定位 */
+    pub notebook: String,
     pub file_name: String,
     pub title: String,
     pub snippet: String,
+    /// 命中次数，用于按相关度排序
+    pub hits: usize,
 }
 
-/// 全文检索：在当前笔记本的所有笔记内容中搜索（大小写不敏感），返回命中与摘要。
-/// 检索在"清洗后文本"上进行（去除 markdown/HTML 格式标记），
-/// 与编辑器内的纯文本一致；定位由前端在编辑器文档内按检索词查找。
-#[tauri::command]
-pub fn search_notes(notebook: String, query: String) -> Result<Vec<SearchHit>, String> {
-    let q = query.trim().to_lowercase();
-    if q.is_empty() {
-        return Ok(Vec::new());
-    }
-    let dir = notebook_dir(&notebook)?;
+/// 在单个笔记本里检索，返回命中列表（内部复用）。
+fn search_in_notebook(notebook: &str, q: &str) -> Result<Vec<SearchHit>, String> {
+    let dir = notebook_dir(notebook)?;
     let mut hits = Vec::new();
-    for entry in fs::read_dir(&dir).map_err(err)? {
-        let entry = entry.map_err(err)?;
+    let entries = match fs::read_dir(&dir) {
+        Ok(e) => e,
+        // 笔记本目录不存在（刚删掉）时按无命中处理，不要让全局搜索整个失败
+        Err(_) => return Ok(hits),
+    };
+    for entry in entries.flatten() {
         let file_name = entry.file_name().to_string_lossy().into_owned();
         if !is_md_file(&file_name) {
             continue;
         }
         let content = fs::read_to_string(entry.path()).unwrap_or_default();
         let clean = clean_md_for_search(&content);
-        if !clean.to_lowercase().contains(&q) {
+        let lower = clean.to_lowercase();
+        let count = lower.matches(q).count();
+        if count == 0 {
             continue;
         }
         let stem = file_name.trim_end_matches(".md").to_string();
         hits.push(SearchHit {
-            title: stem.clone(),
+            notebook: notebook.to_string(),
+            title: stem,
             file_name,
-            snippet: build_snippet(&clean, &q),
+            snippet: build_snippet(&clean, q),
+            hits: count,
         });
     }
     Ok(hits)
+}
+
+/// 全文检索：在**单个**笔记本内搜索（大小写不敏感），返回命中与摘要。
+#[tauri::command]
+pub fn search_notes(notebook: String, query: String) -> Result<Vec<SearchHit>, String> {
+    let q = query.trim().to_lowercase();
+    if q.is_empty() {
+        return Ok(Vec::new());
+    }
+    search_in_notebook(&notebook, &q)
+}
+
+/// 全局检索：跨所有笔记本搜索，按命中次数降序。
+/// 侧栏搜索框搬到顶层后不再有"当前笔记本"，所以需要这个。
+#[tauri::command]
+pub fn search_all_notes(query: String, limit: Option<usize>) -> Result<Vec<SearchHit>, String> {
+    let q = query.trim().to_lowercase();
+    if q.is_empty() {
+        return Ok(Vec::new());
+    }
+    let notes_dir = paths::notes_dir().map_err(err)?;
+    let mut all = Vec::new();
+    for entry in fs::read_dir(&notes_dir).map_err(err)?.flatten() {
+        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().into_owned();
+        // 单个笔记本读失败不应让整个搜索失败
+        if let Ok(hits) = search_in_notebook(&name, &q) {
+            all.extend(hits);
+        }
+    }
+    all.sort_by(|a, b| b.hits.cmp(&a.hits).then_with(|| a.title.cmp(&b.title)));
+    let cap = limit.unwrap_or(200);
+    all.truncate(cap);
+    Ok(all)
 }
 
 /// 清洗 markdown 格式标记，得到与编辑器纯文本一致的检索文本：

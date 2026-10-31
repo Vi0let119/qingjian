@@ -1,17 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <!-- 轻笺图标：米白笺底 + 蕨绿双叶 + 万寿菊点缀（Botanical Garden 配色） -->
-  <rect width="512" height="512" rx="116" fill="#f5f3ed"/>
-  <g transform="translate(256 292)">
-    <!-- 左叶 -->
-    <path d="M0 0 C -14 -92 -64 -126 -114 -122 C -112 -62 -62 -14 0 0 Z"
-          fill="#4a7c59" transform="rotate(-26)"/>
-    <!-- 右叶（略浅） -->
-    <path d="M0 0 C 14 -98 70 -130 118 -120 C 110 -58 62 -12 0 0 Z"
-          fill="#6b9a74" transform="rotate(24)"/>
-    <!-- 茎 -->
-    <path d="M0 0 C -8 46 -10 96 -2 158" stroke="#4a7c59"
-          stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- 轻笺图标 · 折角纸：满版一笺，右上折角（负形），两行书写线（负形） -->
+  <!-- 米纸 #f9f7f2 · 墨 #1a1917 -->
+  <rect width="512" height="512" rx="112" fill="#f9f7f2"/>
+  <g transform="translate(256 256) scale(3.2) translate(-60 -60)">
+    <path d="M20 14h56l24 24v68H20z" fill="#1a1917"/>
+    <path d="M76 14l24 24H76z" fill="#f9f7f2"/>
+    <path d="M36 64h40M36 80h24" stroke="#f9f7f2" stroke-width="9" stroke-linecap="round"/>
   </g>
-  <!-- 万寿菊点缀 -->
-  <circle cx="392" cy="132" r="20" fill="#f9a620"/>
 </svg>
