@@ -34,6 +34,7 @@ export function Sidebar() {
   const notesByNotebook = useNoteStore((s) => s.notesByNotebook);
   const toggleNotebookExpanded = useNoteStore((s) => s.toggleNotebookExpanded);
   const openNote = useNoteStore((s) => s.openNote);
+  const createNote = useNoteStore((s) => s.createNote);
   const activeTabId = useNoteStore((s) => s.activeTabId);
   const createNotebook = useNoteStore((s) => s.createNotebook);
   const renameNotebook = useNoteStore((s) => s.renameNotebook);
@@ -84,8 +85,8 @@ export function Sidebar() {
           <button
             type="button"
             className="qj-sidebar-add"
-            title="新建笔记本"
-            onClick={() => setAdding((v) => !v)}
+            title={`在当前笔记本「${activeNotebook ?? "inbox"}」新建笔记（Ctrl+N）`}
+            onClick={() => void createNote()}
           >
             <IconPlus size={14} />
           </button>
@@ -164,6 +165,20 @@ export function Sidebar() {
             <IconCalendar size={14} />
           </span>
           {dailyBrowserOpen ? "返回笔记" : "每日碎片"}
+        </button>
+      </div>
+
+      {/* 笔记本区标题：新建笔记本的入口放在这里，
+          和顶部"新建笔记"分开，避免两个加号分不清 */}
+      <div className="qj-nb-section-head">
+        <span>笔记本</span>
+        <button
+          type="button"
+          className="qj-nb-section-add"
+          title="新建笔记本"
+          onClick={() => setAdding((v) => !v)}
+        >
+          <IconPlus size={12} />
         </button>
       </div>
 
@@ -247,7 +262,8 @@ export function Sidebar() {
               不再需要中间那栏笔记列表 */}
           {expanded && (
             <ul className="qj-nb-children">
-              {children.length === 0 && <li className="qj-nb-empty">还没有笔记</li>}
+              {/* 空笔记本不用单独提示"还没有笔记"——下面那行"新建笔记"已经说明了一切 */}
+
               {children.map((n) => (
                 <li key={n.fileName}>
                   <button
@@ -263,6 +279,21 @@ export function Sidebar() {
                   </button>
                 </li>
               ))}
+              {/* 就地新建：展开哪个本就在哪个本里建，
+                  不用先回到顶部按钮，也不用先切选中 */}
+              <li>
+                <button
+                  type="button"
+                  className="qj-nb-note qj-nb-note-add"
+                  title={`在「${nb.name}」新建笔记`}
+                  onMouseDown={() => {
+                    void useNoteStore.getState().createNoteIn(nb.name);
+                  }}
+                >
+                  <IconPlus size={11} />
+                  <span>新建笔记</span>
+                </button>
+              </li>
             </ul>
           )}
           </div>

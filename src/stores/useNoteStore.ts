@@ -39,6 +39,8 @@ interface NoteStore {
 
   /** 在 activeNotebook 中新建笔记并打开 */
   createNote: () => Promise<void>;
+  /** 在指定笔记本中新建笔记并打开（侧栏"在此新建"用） */
+  createNoteIn: (notebook: string) => Promise<void>;
   /** 打开笔记为标签（已开则聚焦） */
   openNote: (notebook: string, fileName: string) => void;
   closeTab: (tabId: string) => void;
@@ -152,10 +154,17 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
   createNote: async () => {
     // 兜底：初始化未完成/无选中笔记本时退回默认笔记本，并记录便于排查
-    const notebook = get().activeNotebook ?? "inbox";
+    await get().createNoteIn(get().activeNotebook ?? "inbox");
+  },
+
+  createNoteIn: async (notebook) => {
     try {
       const meta = await api.createNote(notebook);
       await get().selectNotebook(notebook);
+      // 侧栏树里把所在笔记本展开，否则新建的笔记藏在折叠的本子里看不见
+      if (!get().expandedNotebooks.includes(notebook)) {
+        set({ expandedNotebooks: [...get().expandedNotebooks, notebook] });
+      }
       get().openNote(notebook, meta.fileName);
       set({ error: null });
     } catch (e) {

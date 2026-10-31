@@ -1090,7 +1090,7 @@ body.qj-window-image-on .qj-tabs-strip {
   transform: translateY(-50%);
   display: grid;
   place-items: center;
-  color: color-mix(in srgb, var(--qj-text-muted) 76%, transparent);
+  color: color-mix(in srgb, var(--qj-text-secondary) 76%, transparent);
   pointer-events: none;
 }
 .qj-sidebar-search-input {
@@ -1108,7 +1108,7 @@ body.qj-window-image-on .qj-tabs-strip {
 }
 .qj-sidebar-search-input::placeholder {
   /* 默认的 placeholder 太淡，看起来像禁用状态 */
-  color: color-mix(in srgb, var(--qj-text-muted) 88%, transparent);
+  color: color-mix(in srgb, var(--qj-text-secondary) 88%, transparent);
 }
 .qj-sidebar-search-input:focus {
   border-color: color-mix(in srgb, var(--qj-primary) 46%, transparent);
@@ -1126,7 +1126,7 @@ body.qj-window-image-on .qj-tabs-strip {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: var(--qj-text-muted);
+  color: var(--qj-text-secondary);
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
@@ -1147,7 +1147,7 @@ body.qj-window-image-on .qj-tabs-strip {
   place-items: center;
   width: 12px;
   flex: 0 0 12px;
-  color: var(--qj-text-muted);
+  color: var(--qj-text-secondary);
   transition: transform 0.18s ease;
 }
 /* 展开指示箭头：靠类名切换旋转 */
@@ -1175,7 +1175,7 @@ body.qj-window-image-on .qj-tabs-strip {
   border-radius: 5px;
   font: inherit;
   font-size: 0.8rem;
-  color: var(--qj-text-muted);
+  color: var(--qj-text-secondary);
   cursor: pointer;
   overflow: hidden;
   white-space: nowrap;
@@ -1197,7 +1197,7 @@ body.qj-window-image-on .qj-tabs-strip {
 }
 .qj-nb-empty {
   font-size: 0.76rem;
-  color: color-mix(in srgb, var(--qj-text-muted) 70%, transparent);
+  color: color-mix(in srgb, var(--qj-text-secondary) 70%, transparent);
   padding: 3px 8px;
   font-style: italic;
 }
@@ -1228,7 +1228,7 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-search-count {
   font-size: 0.78rem;
   font-weight: 400;
-  color: var(--qj-text-muted);
+  color: var(--qj-text-secondary);
 }
 .qj-search-body {
   display: flex;
@@ -1240,7 +1240,7 @@ body.qj-window-image-on .qj-tabs-strip {
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--qj-text-muted);
+  color: var(--qj-text-secondary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1287,7 +1287,10 @@ body.qj-window-image-on .qj-tabs-strip {
 .qj-search-card-snippet {
   font-size: 0.78rem;
   line-height: 1.55;
-  color: var(--qj-text-muted);
+  /* 摘要文字：在次要文字色基础上再朝正文色靠一档。
+     部分主题的 textSecondary 落在卡片底色上只有 4.1 左右（枯茶/沙汀/竹青），
+     直接用它读长句会累；这里混入正文色保证过 4.5 */
+  color: color-mix(in srgb, var(--qj-text-secondary) 42%, var(--qj-text));
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -1295,12 +1298,58 @@ body.qj-window-image-on .qj-tabs-strip {
 }
 .qj-search-card-meta {
   font-size: 0.7rem;
-  color: color-mix(in srgb, var(--qj-text-muted) 78%, transparent);
+  color: color-mix(in srgb, var(--qj-text-secondary) 78%, transparent);
   margin-top: 2px;
 }
 .qj-search-mark {
-  background: color-mix(in srgb, var(--qj-primary) 26%, transparent);
-  color: inherit;
+  /* 高亮底色：之前 26% 太淡，浅色主题下几乎看不出是"命中的词"。
+     改用主色 34% + 一点点正文色提亮文字，保证深浅主题都立得出来 */
+  background: color-mix(in srgb, var(--qj-primary) 34%, transparent);
+  color: color-mix(in srgb, var(--qj-primary) 30%, var(--qj-text));
+  font-weight: 500;
   border-radius: 2px;
   padding: 0 1px;
+}
+
+/* ---------- 侧栏：笔记本区标题行 ---------- */
+.qj-nb-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 14px 5px 16px;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--qj-text-secondary) 78%, transparent);
+  user-select: none;
+}
+.qj-nb-section-add {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--qj-text-secondary);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.qj-nb-section-add:hover {
+  background: color-mix(in srgb, var(--qj-primary) 16%, transparent);
+  color: var(--qj-primary);
+}
+
+/* 展开列表里的"在此新建笔记"：样式比普通子项淡，不抢笔记本身的注意力 */
+.qj-nb-note-add {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: color-mix(in srgb, var(--qj-text-secondary) 82%, transparent);
+  font-size: 0.76rem;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.qj-nb-note-add:hover {
+  color: var(--qj-primary);
+  background: color-mix(in srgb, var(--qj-primary) 9%, transparent);
 }
