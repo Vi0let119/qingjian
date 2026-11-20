@@ -2,6 +2,103 @@
 
 > 完整实现计划见 [plan.md](./plan.md)。本文件记录**已完成/进行中/下一步**，供后续会话续接。
 
+## ✅ 已修复（2026-11-20）：输入法候选窗跑到左上角 —— 根因是 wry 0.55.1 里的一行 MoveFocus
+
+**结论修正**：11-09 那轮把这个问题判成「WebView2 上游无解、只能等微软」是**错的**。真正的根因在本项目依赖的 **wry 0.55.1** 里，上游已在 wry 0.57.2 修复，我们只是版本太旧没拿到。
+
+**真正的根因**（`wry-0.55.1/src/webview2/mod.rs:1254`）：
+
+```rust
+WM_SETFOCUS | WM_ENTERSIZEMOVE => {
+    let _ = (*controller).MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
+}
+```
+
+`WM_ENTERSIZEMOVE` **只在用户用鼠标拖动窗口边框缩放、或拖标题栏移动窗口时**由 Windows 的模态 size/move 循环发出。在这个时刻同步调 `MoveFocus(PROGRAMMATIC)` 会把 WebView2 的 TSF 状态打坏 —— 组字窗脱离光标、落到屏幕原点 (0,0)，页面收不到 `compositionstart`。**点最大化、Win+Up、F11 全屏都不走这条路**，所以那些操作下正常。
+
+**症状对应关系（用户 2026-11-20 实测确认）**：
+
+| 操作 | 是否走 `WM_ENTERSIZEMOVE` | 实际表现 |
+|---|---|---|
+| 默认窗口大小打字 | 否 | 正常 |
+| 点最大化 / Win+Up 全屏 | 否 | 正常 |
+| 拖边框缩放（横/纵/等比） | **是** | 错位到左上角 |
+| 拖标题栏移动窗口 | **是** | 错位到左上角 |
+| 已错位后再全屏 | 否（不重置状态） | 仍然错位 |
+| 错位状态下点窗口内部 | — | **也恢复不了**（比 11-09 记录的更严重） |
+| 错位状态下切走焦点再回来 | — | 能恢复 |
+
+**为什么之前会误判**：#5675 的 stock repro 用的正是 tauri 2.11.5 / wry 0.55.1 这套坏版本，于是被当成了「纯 WebView2 缺陷」。实际上那行 `WM_ENTERSIZEMOVE` 才是主动施害者 —— 上游 wry PR [#1910](https://github.com/tauri-apps/wry/pull/1910)（2026-10-28 合并，进入 0.57.2）删掉它的提交说明写得很清楚：「移动窗口会让 webview 失焦再聚焦」（tauri issue [#10767](https://github.com/tauri-apps/tauri/issues/10767)），[wry#1924](https://github.com/tauri-apps/wry/pull/1924) 的实测数据也印证同步 `MoveFocus` 会打坏 TSF。
+
+### 修复内容
+
+把整个 Tauri 栈升到带修复的版本：
+
+| 包 | 旧 | 新 |
+|---|---|---|
+| tauri | 2.11.5 | **2.12.7** |
+| tauri-runtime-wry | 2.11.4 | **2.12.5** |
+| **wry** | **0.55.1** | **0.57.3** ← 关键，`WM_ENTERSIZEMOVE` 已彻底移除 |
+| webview2-com | 0.38.2 | 0.39.1 |
+| tauri-plugin-dialog | 2.7.2 | 2.8.4 |
+| @tauri-apps/api | 2.11.1 | 2.12.5 |
+| @tauri-apps/cli | 2.11.4 | 2.12.6 |
+| @tauri-apps/plugin-dialog | 2.7.2 | 2.8.4 |
+
+`cargo check` 一次通过，**从 tauri 2.11 → 2.12 零 API 破坏**（`WebviewWindowBuilder` / `set_effects` / `WindowEvent::Destroyed` 全部兼容）。
+
+**升级踩坑记录**：
+- **cargo 走坏代理连不上 crates**：报错 `Could not connect to server (Failed to connect to rsproxy.cn port 443 via 127.0.0.1)`。原因不是 cargo 配置，而是注册表残留 `ProxyServer=127.0.0.1:6789`（代理软件已关、`ProxyEnable=0`，但 libcurl 仍读该值）。解法：命令前加 `CARGO_HTTP_PROXY=""`。
+- **`cargo build --release` 编出的 exe 会加载 `http://localhost:1420`**（devUrl）而不是内置 dist —— 因为没带 `custom-protocol` feature。必须用 `npm run tauri build -- --no-bundle` 才得到自包含 exe（加载 `http://tauri.localhost/`）。
+- **tauri CLI 有版本一致性校验**：Rust crate 与 npm 包必须同 minor，否则直接报错。升级 tauri 后必须同步 `@tauri-apps/api` / `cli` / `plugin-dialog`，且 `tauri-plugin-dialog` 的 Rust 侧版本也要和 JS 侧对齐（2.7.2 vs 2.8.4 会被拦下）。
+
+### 验证结果（本轮已跑）
+
+- `npm test`：**76 passed / 10 files**
+- `npm run build`：通过（281 modules，dist 正常产出）
+- `cargo test`：**42 passed / 0 failed**
+- 隔离数据目录冒烟（`QINGJIAN_DATA_DIR` + `QJ_CDP_PORT`）：主窗口 / 碎片窗口 / 设置窗口三窗口全部创建成功；21 套主题正常列出；`--qj-primary=#317d59` 等主题变量正确写入；编辑器祖先链无 `zoom`/`filter`，`--qj-zoom=1`、`visualViewport.scale=1`、`dpr=1.5` 均正常。
+- **源码层确认**：`wry-0.57.3/src/webview2/mod.rs` 里 `grep ENTERSIZEMOVE` **零命中**，只剩 `WM_SETFOCUS => { MoveFocus }`。
+
+**待人工验证**：本机无法自动复现真实 IME 候选窗位置（CDP 的 `imeSetComposition` 走合成事件不经原生 TSF；`keybd_event` 会被抢焦点），必须由用户用真实微软拼音实测。验证包：`verify/轻笺_IME修复验证版.exe`（已 gitignore）。
+
+### 历史记录（2026-11-09，结论已被本轮推翻，保留备查）
+
+#### 〔已被推翻〕原 2026-11-09 排查记录：WebView2 上游 bug，不改代码
+
+**症状**：窗口保持启动默认大小时，在内容区用中文输入法打字，候选窗跟随光标正常；**只要稍微拖动改变窗口大小，候选窗就跑到屏幕/窗口左上角 (0,0)**，之后一直错，直到拖一下窗口 / 在窗口内点一下 / 切走焦点再回来才恢复，下一次 resize 又复发。
+
+**结论：不是本项目代码 bug，是 WebView2 宿主层的已知缺陷，官方未修。** 本轮不改动任何产品代码，仅存档。
+
+**证据（版本栈与本项目完全吻合）**：
+- [MicrosoftEdge/WebView2Feedback#5675](https://github.com/MicrosoftEdge/WebView2Feedback/issues/5675)「IME composition window jumps to the top-left of the screen after the host window is resized」—— 标题与症状逐字吻合。报告者填的环境是 **Tauri 2.11.5 / wry 0.55.1 / webview2-com 0.38.2**，与 `src-tauri/Cargo.lock` 完全一致。状态 **open、无官方修复**。明确写「Edge/Chrome 不复现，只有 WebView2」，且用 stock Tauri 空项目（普通 `<input>`、无自定义代码）即可复现。
+- 本机实测环境：WebView2 Runtime 126.0.2592.113、微软拼音（zh-Hans-CN / 00000804）、系统 150% DPI（AppliedDPI=144）。用 CDP（`QJ_CDP_PORT=9333` + 隔离数据目录）确认 resize 后 `devicePixelRatio=1.5`、`visualViewport.scale=1`、页面 caret/布局尺寸均正常，编辑器祖先链无 `zoom`/`transform`/`filter` 改坐标系 —— 前端一切正常，问题在原生层。
+- [MicrosoftEdge/WebView2Feedback#1611](https://github.com/MicrosoftEdge/WebView2Feedback/issues/1611)：拖动窗口时候选窗不跟随（2021 起 open，微软内部 tracked）。
+- [tauri-apps/wry#1908](https://github.com/tauri-apps/wry/issues/1908) + 修复 PR [wry#1924](https://github.com/tauri-apps/wry/pull/1924)：同应用**多窗口切换**触发同类 IME 错位，根因是 `WM_SETFOCUS` 里同步调 `MoveFocus` 破坏 TSF 状态；PR 用延迟/条件 MoveFocus 缓解。**触发条件是窗口切换，不是 resize，不能解决本问题。**
+
+**上游报告者已排除的假设**（别重复排查）：子 HWND 几何滞后、主线程卡顿、页面 caret 位置错误、`MoveFocus(PROGRAMMATIC)`、`NotifyParentWindowPositionChanged()`（0–1100ms 内连调 10 次仍无效）。
+
+**推测机制**（上游报告者的分析，未官方确认）：resize 后 caret 位置没有经 `InputMethodWinTSF::OnCaretBoundsChanged → TSFBridge::OnTextLayoutChanged → TSFTextStore::SendOnLayoutChange → ITextStoreACPSink::OnLayoutChange` 重新上报给 TSF，`GetTextExt` 一直返回过期/无布局矩形，输入法遂把组字窗落到屏幕原点。
+
+**与历史修复的区别（重要，别混淆）**：2026-10-28 修过的「CSS `zoom` / `transform: scale` 改坐标系导致 IME 候选窗跑左上角」是另一根因（CSS 层），那次改成字号/行高/内边距相乘后已生效且至今仍在（`src/components/editor/editor.css`、`ThemeProvider.tsx`）。本次是 **resize 触发的原生层 TSF 通知缺失**，与前端 CSS 无关。
+
+**规避方法（给用户）**：出现错位时，用鼠标拖一下窗口、点一下窗口内部、或切到别的窗口再回来即可恢复；Resize 之间尽量避免立刻开始中文组字。
+
+**后续**：等 WebView2 / wry 官方修复（关注 #5675、wry#1924 是否合入并覆盖 resize 场景）或整体升级 Tauri/wry/WebView2 Runtime 后再验证。若将来要做应用层自动 workaround，应从「resize 结束后模拟一次被验证有效的窗口位置刷新」入手，且必须先用真实中文输入法实测候选窗屏幕坐标确认有效 —— 本轮未做、也未实施。
+
+### 第二轮复查（2026-11-09 晚）：结论不变，确认「没有现成解法」
+
+复查了上游 issue 状态、wry 补丁内容、WebView2 官方是否给出过 API 级规避，结论：**仍然没有可用的通用解法**。
+
+- **#5675 仍 open、0 条评论**，8/18 提交后无任何维护者回应；无 assignee、无 milestone。同族的 [#1611](https://github.com/MicrosoftEdge/WebView2Feedback/issues/1611)（2021 年，拖动窗口候选窗不跟随）打了微软内部 `tracked` 标签但 5 年未修；[#5570](https://github.com/MicrosoftEdge/WebView2Feedback/issues/5570)（2026-04，RDP 场景）已指派 assignee 但同样无进展。说明这类 TSF 布局通知缺陷在微软侧长期处于「已记录、低优先级」。
+- **[wry#1924](https://github.com/tauri-apps/wry/pull/1924) 补丁只改 `WM_SETFOCUS`**（把同步 `MoveFocus` 改成 `PostMessage` 延迟 + `GetFocus()` 条件判断），**完全不涉及 resize 路径**，即便合入也治不好本问题。PR 至今未 merge。
+- **同族问题的最有效规避是「每个 webview 独立 user data folder」**（见 [#5799](https://github.com/MicrosoftEdge/WebView2Feedback/issues/5799)：共用 user data folder 时 20 次切换失败 10 次，独立后 0 次）。但该结论是针对**窗口切换**场景；轻笺的主窗口/碎片/设置窗口共用一个浏览器进程正是为了共享主题状态与低内存占用，改成每窗口独立 user data folder 会显著增加内存与启动开销，且对本 bug 是否有效**未经证实**，不建议为此改动。
+- `NotifyParentWindowPositionChanged()` 与 `MoveFocus()` 是官方仅有的「让 WebView2 重算坐标」的入口，**上游实测两者对 resize 场景均无效**（#5675 正文明确记录）。也就是说 WebView2 目前**没有暴露任何能强制刷新 TSF caret 布局的 API**。
+
+**本轮实测过程（记录以备后来者）**：搭建了自动化验证链路 —— 用 `QJ_CDP_PORT=9333` 起隔离实例、CDP 真实点击进入编辑器、PowerShell 枚举 `Chrome_WidgetWin_*` / `MSCTFIME UI` / `CiceroUIWndFrame` 窗口坐标来判定候选窗是否落在 (0,0)。结论限制：**CDP 的 `Input.imeSetComposition` 走的是合成事件路径，不经过原生 TSF，因此无法用它判定候选窗真实位置**；而 `keybd_event` 模拟的输入会被本会话的前台窗口抢占（`GetFocus()` 恒为 0x0），也无法稳定复现。**这台机器上无法自动复现，只能由人工用真实输入法验证。** 若要自动化，需要一个不被其他窗口抢焦点、且能真实激活微软拼音的环境。
+
+**给用户的结论**：目前只能靠「错位时拖一下窗口 / 点一下窗口内 / 切走焦点再回来」手动恢复。不是我们代码的问题，改 CSS 或改前端都无效。
+
 ## 当前状态（2026-10-29，v0.1.5 发布：主题 21 套 + 滚动修复）
 
 **✅ 主题扩到 21 套（v4：视频取色 12 套）**
