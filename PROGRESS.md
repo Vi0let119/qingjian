@@ -99,6 +99,42 @@ WM_SETFOCUS | WM_ENTERSIZEMOVE => {
 
 **给用户的结论**：目前只能靠「错位时拖一下窗口 / 点一下窗口内 / 切走焦点再回来」手动恢复。不是我们代码的问题，改 CSS 或改前端都无效。
 
+## 当前状态（2026-11-23，v0.1.9 发布：气泡背景流动波纹）
+
+**✅ 气泡视图背景：换成 WaveField 流动波纹**
+
+参考 `wave-field/wave-field.js`（SnowLuma 控制台登录页动效）实现：一屏细竖线被 Perlin 噪声推动成缓缓流动的波纹，鼠标划过时邻近线条被推开、松开回弹。
+
+- 移植为 TS：`src/lib/waveField.ts`（算法/默认值与参考实现一致，`Perlin` + `computeGrid` 为纯函数便于测试）
+- 参数层：`src/lib/waveSettings.ts`（6 个可调参数 + 范围夹取 + 映射到 WaveField options）
+- React 封装：`src/components/bubble/WaveLayer.tsx`；全局 store：`src/stores/useWaveSettings.ts`
+- **颜色走 CSS**：`.qj-wave-layer { color: rgba(var(--qj-glow-rgb), 0.26) }`，21 套主题自适应，换主题即换色
+- 设置界面新增「背景波纹（气泡视图）」区块：开关 + 5 滑杆 + 恢复默认，350ms 防抖落盘
+
+**关键约束：波纹层必须在 `.qj-bubble-stage` 之外。** stage 上挂着拖拽平移/滚轮缩放的 `transform`，波纹若放进去会跟着气泡一起被拖动，"背景"属性就不成立了。层级安排：`.qj-wave-layer{z-index:0}` < `.qj-bubble-stage{z-index:1}`，且波纹 `pointer-events:none` 不抢画布事件。
+
+**本轮踩的三个坑（都已修 + 加测试锁死）**：
+
+1. **store 定义了 apply() 却没真正 listen 广播** —— 设置窗口改了参数、主窗口毫无反应。更阴险的是**看起来像在动**：噪声相位照常推进，draw 的 `d` 还在变，只有竖线数量纹丝不动（间距 10→24 仍 130 条）。教训：验证「参数生效」不能只看"画面变没变"，要数结构性指标（`M` 命令条数）。修法：`init()` 里先 `listen("settings://changed")` 再拉一次当前值，监听用模块级 promise 兜住幂等。
+2. **参考实现的 `timeScaleX/Y` 从未参与计算** —— 从 options 解构出来却没用，`#step` 里把时间推进量写死成 `ts * 0.0125` / `ts * 0.005`，导致「流动速度」滑杆完全无效。改为走 `timeScale`（系数 5 和 6.6667，默认值下行为不变）。
+3. **滑杆默认值不在步长序列上** —— `pointerRadius` 默认 175、步长 10，range 控件吸附显示成 180。真值没变，但用户一拖就永久改成吸附值。步长改 5，并加单测遍历所有参数校验「默认值落在 min + n*step 上」。
+
+**验证**：
+- `npm test` **93 passed / 11 files**（新增 17 项：网格几何、Perlin 确定性/可复现、参数夹取、倍率映射、滑杆范围一致性）
+- `cargo test` **45 passed**（新增 3 项：`bubbleWave` 序列化、字段级合并、老配置无该字段兼容）
+- `npm run build` 通过，`waveSettings` 独立分块 2.42 kB
+- 端到端（CDP + 隔离数据目录，打包产物）：间距 10→24 时竖线 **130→56** 条；幅度变化改变几何；速度 0 时画面完全静止；开关关闭后 `d` 冻结、重开恢复动画；跨窗口同步实测（设置窗口拖到 20 → 主窗口变成 66 条）；「恢复默认」精确还原 175
+- 打包产物本身验证：0.1.9 安装包启动后波纹正常渲染（130 条、`rgba(114,203,161,0.26)`），包内 `ProductVersion=0.1.9`
+
+**发版踩坑：`github.com:443` 被阻断，`git push` 连不上**（`api.github.com` 正常，`gh` 全部可用）。直连 `Connection was reset`，走 `127.0.0.1:6789` 代理也会失败（代理软件没开）。最终用 GitHub Git Data API 手工重建 tree + commit + 快进 ref 完成推送：
+```
+POST /repos/{repo}/git/blobs      ← base64 内容
+POST /repos/{repo}/git/trees      ← 递归重建目录树（需从父 commit 展平后逐层组装）
+POST /repos/{repo}/git/commits
+PATCH /repos/{repo}/git/refs/heads/main
+```
+注意两点：读本地 git 输出必须显式 `decode("utf-8")`（Windows 默认 GBK 会炸）；`git push` 的退出码要用 `${PIPESTATUS[0]}` 取，否则被管道里 `tail` 的 0 掩盖成假成功。
+
 ## 当前状态（2026-10-29，v0.1.5 发布：主题 21 套 + 滚动修复）
 
 **✅ 主题扩到 21 套（v4：视频取色 12 套）**
