@@ -99,6 +99,38 @@ WM_SETFOCUS | WM_ENTERSIZEMOVE => {
 
 **给用户的结论**：目前只能靠「错位时拖一下窗口 / 点一下窗口内 / 切走焦点再回来」手动恢复。不是我们代码的问题，改 CSS 或改前端都无效。
 
+## 当前状态（2026-11-24，v0.1.10 发布：空行修复 + 返回层级 + 行间距）
+
+**✅ 空行不再坍缩/翻倍**
+
+用户报「打开文档时某处换行变成两个，删掉再退出又变回来」。根因是占位符还原形态错了两次：
+
+| 形态 | 问题 |
+|---|---|
+| 裸 `<br>` | markdown-it 当成**段落内**软换行，N 个空行挤进一个 `<p>`（含 N 个 hardBreak）；序列化按段落计数只写回 1 个 → 多个空行坍缩 |
+| `<p><br></p>` | 结构对了，但那个 br 是**真实内容**，ProseMirror 再补一个 trailingBreak → 一个空行显示成两行高（实测 63px ≈ 2×31px） |
+| `<p></p>` ✅ | 真空段落（content.size === 0），只有 trailingBreak，恰好一行（31px） |
+
+判定方法：`node.content.content.some(c => c.type.name === "hardBreak")` 必须为 false。测试已锁死这条（改回 `<p><br></p>` 会立即失败）。1/2/3 个连续空行各跑 4 轮往返结果完全一致。
+
+**✅ 从书写视图返回回到上一级**
+
+`BubbleWorkspace` 在 `MainWindow` 的两个互斥 return 分支间会被卸载，层级存在 `useState` 里随之丢失，返回时重置成 notebooks 层。新增 `src/stores/useBubbleLayer.ts`，层级生命周期长于视图。
+
+**✅ 字号下拉正确回显**
+
+`currentSize` 原来只读 `nodeAt(from)`——光标停在**文末**时读不到前面文字的 mark，刚设完字号（写进 `storedMarks`）也读不到，于是下拉一直是「字号」，用户以为设置失败（其实后续输入的字已带字号）。改为依次尝试 `storedMarks` → `$from.marks()` → `nodeAt(from)`。
+
+**✅ 新增书写行间距**
+
+设置 → 通用设置 → 书写行间距（80%–160%，步长 5%）。CSS 变量 `--qj-line-scale` 乘到 `line-height` 上，`calc(1.9 * var(--qj-line-scale, 1))`，1.0 时等于原来的写死值、观感不变。碎片窗口紧凑模式同样按比例缩放（1.7 基准）。走 `settings://changed` 广播跨窗口同步，350ms 防抖落盘。只改行高不动字号。
+
+**验证**：
+- `npm test` **104 passed / 12 files**；`cargo test` **46 passed**
+- 实测（打包产物 + 隔离目录 + CDP）：空段落 31px 且 `brs=1`；返回后面包屑停在原笔记本层（`正确层级: true`）；行间距 1.0/1.5/0.8 → 行高 31/47/25px 且 fontSize 恒 17px；选区设 24px 后 `select.value="24px"`、输入文字带 `style="font-size: 24px"`
+
+**发版再踩 `github.com:443` 阻断**：`git push` 三种尝试全部失败（超时 / 拒绝 / reset），`gh api` 却全程正常。继续用 Git Data API 推送（blobs → trees → commits → PATCH refs），脚本见上一版本的记录。注意：读本地 git 输出必须显式 `decode("utf-8")`。
+
 ## 当前状态（2026-11-23，v0.1.9 发布：气泡背景流动波纹）
 
 **✅ 气泡视图背景：换成 WaveField 流动波纹**
