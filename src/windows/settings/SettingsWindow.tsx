@@ -2,6 +2,14 @@
 // 所有改动写入 zustand 预览态（本窗口实时生效），点"应用"才持久化并广播全窗口。
 import { useCallback, useEffect, useRef, useState } from "react";
 import { WAVE_RANGES, normalizeWaveSettings, type WaveSettings } from "../../lib/waveSettings";
+import {
+  LINE_SPACING_DEFAULT,
+  LINE_SPACING_MAX,
+  LINE_SPACING_MIN,
+  LINE_SPACING_STEP,
+  lineSpacingLabel,
+  normalizeLineSpacing,
+} from "../../lib/lineSpacing";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api, type AppSettings, type ModuleConfig, type ThemeConfig } from "../../lib/api";
 import { filePathToResizedDataUri } from "../../lib/dataUri";
@@ -73,6 +81,10 @@ export default function SettingsWindow() {
   const fontScaleTimer = useRef<number | null>(null);
   // 气泡背景波纹参数
   const [wave, setWave] = useState<WaveSettings | null>(null);
+  // 书写行间距（null = 尚未加载）
+  const [lineSpacing, setLineSpacing] = useState<number | null>(null);
+  const lineSpacingRef = useRef(LINE_SPACING_DEFAULT);
+  const lineSpacingTimer = useRef<number | null>(null);
   const waveRef = useRef<WaveSettings | null>(null);
   const waveTimer = useRef<number | null>(null);
 
@@ -87,6 +99,9 @@ export default function SettingsWindow() {
         const w = normalizeWaveSettings(s.bubbleWave);
         waveRef.current = w;
         setWave(w);
+        const ls = normalizeLineSpacing(s.lineSpacing);
+        lineSpacingRef.current = ls;
+        setLineSpacing(ls);
       })
       .catch(console.error);
   }, []);
@@ -129,6 +144,37 @@ export default function SettingsWindow() {
       }
     },
     [persistFontScale]
+  );
+
+  const persistLineSpacing = useCallback((value: number) => {
+    void api
+      .settingsSet({ lineSpacing: value })
+      .catch((e) => setMessage(`保存行间距失败: ${String(e)}`));
+  }, []);
+
+  /** 行间距：本地即时生效，防抖落盘 */
+  const handleLineSpacing = (value: number) => {
+    const next = normalizeLineSpacing(value);
+    lineSpacingRef.current = next;
+    setLineSpacing(next);
+    // 即时预览：不等落盘，先本地写变量，拖动过程立即看到效果
+    document.documentElement.style.setProperty("--qj-line-scale", String(next));
+    if (lineSpacingTimer.current !== null) window.clearTimeout(lineSpacingTimer.current);
+    lineSpacingTimer.current = window.setTimeout(() => {
+      lineSpacingTimer.current = null;
+      persistLineSpacing(next);
+    }, 350);
+  };
+
+  // 卸载时补存未落盘的行间距改动
+  useEffect(
+    () => () => {
+      if (lineSpacingTimer.current !== null) {
+        window.clearTimeout(lineSpacingTimer.current);
+        persistLineSpacing(lineSpacingRef.current);
+      }
+    },
+    [persistLineSpacing]
   );
 
   const persistWave = useCallback((value: WaveSettings) => {
@@ -550,6 +596,36 @@ export default function SettingsWindow() {
             <p className="qj-settings-note">
               放大缩小整个界面的文字与图标（85%–150%），所有窗口实时同步。编辑区内还可按住 Ctrl +
               滚轮单独缩放正文视图（不影响实际字号，Ctrl+0 复位）。
+            </p>
+
+            <div className="qj-control-row" style={{ marginTop: 14 }}>
+              <span className="qj-control-label">书写行间距</span>
+              <div className="qj-control-value">
+                <input
+                  type="range"
+                  min={LINE_SPACING_MIN}
+                  max={LINE_SPACING_MAX}
+                  step={LINE_SPACING_STEP}
+                  disabled={lineSpacing === null}
+                  value={lineSpacing ?? LINE_SPACING_DEFAULT}
+                  onChange={(e) => handleLineSpacing(Number(e.target.value))}
+                />
+                <span className="qj-control-num">
+                  {lineSpacing === null ? "…" : lineSpacingLabel(lineSpacing)}
+                </span>
+                <button
+                  type="button"
+                  className="qj-btn"
+                  disabled={lineSpacing === null || lineSpacing === LINE_SPACING_DEFAULT}
+                  onClick={() => handleLineSpacing(LINE_SPACING_DEFAULT)}
+                >
+                  标准
+                </button>
+              </div>
+            </div>
+            <p className="qj-settings-note">
+              只影响编辑区正文的行距（80%–160%），不改字号。行距加大后长段落更好读，
+              嫌内容太散可以调到 90% 以下。碎片窗口的紧凑排版按同一比例缩放。
             </p>
           </section>
 

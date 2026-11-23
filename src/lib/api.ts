@@ -43,6 +43,8 @@ export interface AppSettings {
   uiFontScale?: number | null;
   /** 气泡视图背景波纹参数（缺省 = 用前端 WAVE_DEFAULTS） */
   bubbleWave?: Partial<WaveSettings> | null;
+  /** 书写行间距倍率（1.0 = 标准，缺省值） */
+  lineSpacing?: number | null;
 }
 
 // ---------- 附件 ----------

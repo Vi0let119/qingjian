@@ -17,16 +17,38 @@ export function MenuBar({ editor, compact = false, onInsertImage }: MenuBarProps
     [editor]
   );
 
-  // 当前选区字号：取 textStyle mark 的 fontSize 属性
+  /**
+   * 当前字号：要同时考虑三种情况，否则下拉框会一直显示「字号」——
+   * 用户以为设置没生效，其实已经生效了（踩过的坑）。
+   *
+   *  1. 有选区 / 光标在字中间 → 读 `nodeAt(from)` 的 textStyle mark
+   *  2. 光标停在文本**末尾** → `nodeAt(from)` 是下一个节点或 null，要去读
+   *     `$from.marks()`（ProseMirror 会给当前位置的左邻 mark）
+   *  3. 空选区且刚设过字号 → 读 `state.storedMarks`，这样"选字号 → 后续输入
+   *     用它"的反馈能立刻回显
+   */
   const currentSize = ((): FontSizeLevel | "" => {
-    const { from } = editor.state.selection;
-    const marks = editor.state.doc.nodeAt(from)?.marks ?? [];
-    for (const mark of marks) {
-      if (mark.type.name === "textStyle" && typeof mark.attrs.fontSize === "string") {
-        return mark.attrs.fontSize as FontSizeLevel;
+    const { state } = editor;
+    const pick = (marks: readonly { type: { name: string }; attrs: Record<string, unknown> }[]) => {
+      for (const mark of marks) {
+        if (mark.type.name === "textStyle" && typeof mark.attrs.fontSize === "string") {
+          return mark.attrs.fontSize as FontSizeLevel;
+        }
       }
+      return null;
+    };
+
+    // 3) 空选区：优先用 storedMarks（用户刚设了"后续输入字号"）
+    if (state.selection.empty && state.storedMarks) {
+      const fromStored = pick(state.storedMarks);
+      if (fromStored) return fromStored;
     }
-    return "";
+    // 1)/2) 常规：$from.marks() 已涵盖"光标在字中间"和"停在末尾"两种位置
+    const fromCursor = pick(state.selection.$from.marks());
+    if (fromCursor) return fromCursor;
+    // 兜底：选区起点节点的 mark（有选区时的常见形态）
+    const { from } = state.selection;
+    return pick(state.doc.nodeAt(from)?.marks ?? []) ?? "";
   })();
 
   return (

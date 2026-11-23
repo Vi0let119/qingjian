@@ -28,6 +28,9 @@ pub struct AppSettings {
     /// 气泡视图背景波纹参数（列间距/幅度/速度/指针半径/推力 + 总开关）。
     /// 缺省/None 用前端 WAVE_DEFAULTS；老版本 settings.json 无此字段也能解析。
     pub bubble_wave: Option<BubbleWave>,
+    /// 书写行间距倍率（1.0 = 标准）。作用于编辑器正文的 line-height。
+    /// 缺省/None 按 1.0 处理。
+    pub line_spacing: Option<f32>,
 }
 
 /// 气泡背景波纹设置。全部字段 Option：前端只传改动的部分，None 保留旧值。
@@ -80,6 +83,9 @@ fn merge_settings(current: &mut AppSettings, partial: &AppSettings) {
     }
     if partial.ui_font_scale.is_some() {
         current.ui_font_scale = partial.ui_font_scale;
+    }
+    if partial.line_spacing.is_some() {
+        current.line_spacing = partial.line_spacing;
     }
     if let Some(incoming) = partial.bubble_wave.as_ref() {
         match current.bubble_wave.as_mut() {
@@ -281,6 +287,7 @@ mod tests {
             startup_window: Some("main".into()),
             ui_font_scale: Some(1.0),
             bubble_wave: None,
+            line_spacing: None,
         };
         merge_settings(
             &mut current,
@@ -338,6 +345,33 @@ mod tests {
         let wave = current.bubble_wave.expect("bubble_wave 应存在");
         assert_eq!(wave.column_gap, Some(24.0));
         assert_eq!(wave.enabled, Some(true));
+    }
+
+    #[test]
+    fn line_spacing_roundtrip_and_merge() {
+        // camelCase 解析
+        let parsed: AppSettings = serde_json::from_str(r#"{"lineSpacing":1.35}"#).unwrap();
+        assert_eq!(parsed.line_spacing, Some(1.35));
+
+        // 老配置没有该字段 → None（前端回落到 1.0）
+        let legacy: AppSettings = serde_json::from_str(r#"{"uiFontScale":1.2}"#).unwrap();
+        assert!(legacy.line_spacing.is_none());
+
+        // 局部覆盖：只改行间距，字体缩放保留
+        let mut current = AppSettings {
+            ui_font_scale: Some(1.2),
+            line_spacing: Some(1.0),
+            ..Default::default()
+        };
+        merge_settings(
+            &mut current,
+            &AppSettings {
+                line_spacing: Some(1.4),
+                ..Default::default()
+            },
+        );
+        assert_eq!(current.line_spacing, Some(1.4));
+        assert_eq!(current.ui_font_scale, Some(1.2));
     }
 
     #[test]

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BubbleCanvas, type BubbleItem } from "./BubbleCanvas";
 import { useNoteStore } from "../../stores/useNoteStore";
+import { useBubbleLayer, type BubbleLayer } from "../../stores/useBubbleLayer";
 import { IconChevronLeft, IconPlus } from "../common/icons";
 import "./bubble.css";
 import "./workspace.css";
@@ -28,7 +29,7 @@ export function relativeTime(secs: number): string {
   return `${dt.getMonth() + 1}月${dt.getDate()}日`;
 }
 
-export type BubbleLayer = { kind: "notebooks" } | { kind: "notes"; notebook: string };
+export type { BubbleLayer };
 
 interface BubbleWorkspaceProps {
   /** 从气泡层进入书写层时的回调（由外层切换到编辑器） */
@@ -44,7 +45,18 @@ export function BubbleWorkspace({ onOpenNote, focusNotebook }: BubbleWorkspacePr
   const selectNotebook = useNoteStore((s) => s.selectNotebook);
   const createNote = useNoteStore((s) => s.createNote);
 
-  const [layer, setLayer] = useState<BubbleLayer>({ kind: "notebooks" });
+  // 层级提升到 store：书写视图会卸载本组件，本地 state 会丢
+  const layer = useBubbleLayer((s) => s.layer);
+  const openNotes = useBubbleLayer((s) => s.openNotes);
+  const resetLayer = useBubbleLayer((s) => s.back);
+  // 兼容原有代码里的 setLayer 调用形态
+  const setLayer = useCallback(
+    (next: BubbleLayer) => {
+      if (next.kind === "notes") openNotes(next.notebook);
+      else resetLayer();
+    },
+    [openNotes, resetLayer]
+  );
   /** 展开动画：被点气泡在视口中的矩形 */
   const [opening, setOpening] = useState<{ rect: DOMRect; title: string } | null>(null);
   const pendingRef = useRef<{ notebook: string; fileName: string } | null>(null);
@@ -81,7 +93,7 @@ export function BubbleWorkspace({ onOpenNote, focusNotebook }: BubbleWorkspacePr
 
   const back = useCallback(() => {
     setLayer({ kind: "notebooks" });
-  }, []);
+  }, [setLayer]);
 
   // Esc 返回上层
   useEffect(() => {

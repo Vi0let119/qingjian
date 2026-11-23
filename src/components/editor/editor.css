@@ -138,7 +138,9 @@ body.qj-window-image-on .qj-menubar {
   isolation: isolate;
   padding: calc(34px * var(--qj-zoom)) calc(40px * var(--qj-zoom)) calc(90px * var(--qj-zoom));
   font-size: calc(1.18rem * var(--qj-zoom));
-  line-height: 1.9;
+  /* 行距可调（设置 → 书写行间距）。变量由 ThemeProvider 写到 :root，
+     基准 1.9 是原来的写死值，1.0× 时观感与旧版完全一致。 */
+  line-height: calc(1.9 * var(--qj-line-scale, 1));
   color: var(--qj-ink-800);
   outline: none;
   caret-color: var(--qj-primary);
@@ -174,7 +176,7 @@ body.qj-window-image-on .qj-menubar {
 .qj-editor-compact {
   padding: calc(14px * var(--qj-zoom)) calc(16px * var(--qj-zoom)) calc(44px * var(--qj-zoom));
   font-size: calc(1rem * var(--qj-zoom));
-  line-height: 1.7;
+  line-height: calc(1.7 * var(--qj-line-scale, 1));
 }
 
 /* ProseMirror 排版 */

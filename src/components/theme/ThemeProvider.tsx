@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { api, type AppSettings, type ThemeConfig } from "../../lib/api";
+import { lineSpacingCssValue, normalizeLineSpacing } from "../../lib/lineSpacing";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { mixHex } from "../../lib/contrast";
 import { absToDataUri } from "../../lib/dataUri";
@@ -136,17 +137,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // WebView2 计算 IME 候选窗位置时拿不到缩放映射，中文输入法候选框会跑到窗口左上角。
   // 改为 font-size 基准变量 + rem/em 布局，文字真正放大且不移动任何坐标系。
   const [fontScale, setFontScale] = useState(1);
+  // 书写行间距倍率（设置 → 书写行间距）。与字体缩放同一套广播机制。
+  const [lineSpacing, setLineSpacing] = useState(1);
   useEffect(() => {
     let disposed = false;
     void api
       .settingsGet()
       .then((s) => {
-        if (!disposed) setFontScale(s.uiFontScale ?? 1);
+        if (disposed) return;
+        setFontScale(s.uiFontScale ?? 1);
+        setLineSpacing(normalizeLineSpacing(s.lineSpacing));
       })
       .catch(() => {});
     let unlisten: (() => void) | null = null;
     void listen<AppSettings>("settings://changed", (e) => {
       setFontScale(e.payload.uiFontScale ?? 1);
+      setLineSpacing(normalizeLineSpacing(e.payload.lineSpacing));
     }).then((un) => {
       if (disposed) un();
       else unlisten = un;
@@ -162,6 +168,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.style.fontSize = `${14 * fontScale}px`;
     document.documentElement.style.setProperty("--qj-font-scale", String(fontScale));
   }, [fontScale]);
+
+  useEffect(() => {
+    // 行距也是"改布局属性"，不用 transform/zoom，不影响 IME 坐标系。
+    document.documentElement.style.setProperty(
+      "--qj-line-scale",
+      lineSpacingCssValue(lineSpacing)
+    );
+  }, [lineSpacing]);
 
   // 写入 :root 变量
   useEffect(() => {

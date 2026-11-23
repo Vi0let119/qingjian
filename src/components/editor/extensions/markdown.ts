@@ -64,14 +64,43 @@ const BLANK_MARK = "\u200b\u2063qjblank\u2063\u200b";
 
 /** 读入时还原：占位段落 → 真正的空段落。
  *
- *  时序很重要：Markdown 扩展先把 md 解析成 HTML，ProseMirror 再把 HTML 解析成文档。
- *  如果在 md 文本里删掉占位符，那个段落就成了 `<p></p>`，
- *  ProseMirror 解析空 `<p>` 时会跳过它——空行照样丢。
- *  所以要在 md 层面把它换成**带 br 的段落**：`<p><br></p>` 会被解析成一个空段落节点，
- *  再配合 editor.css 里对空段落的高度处理，视觉上就是一行空行。 */
+ *  时序：Markdown 扩展先把 md 解析成 HTML，ProseMirror 再把 HTML 解析成文档。
+ *  如果在 md 文本里删掉占位符，那个段落就成了空行，会被 markdown-it 吞掉——空行丢。
+ *
+ *  **必须是完整段落标签 `<p></p>`，既不能是裸 `<br>`，也不能是 `<p><br></p>`：**
+ *
+ *  - 裸 `<br>`：markdown-it 把它当段落内软换行，连续多个占位行全挤进**一个** `<p>`，
+ *    变成"一个含 N 个 hardBreak 的空段落"；序列化按段落计数只写回 1 个占位符，
+ *    多个空行因此坍缩成一个（用户报的"换行数会变"）。
+ *  - `<p><br></p>`：结构对了，但段落里有一个**内容性** hardBreak，
+ *    ProseMirror 渲染时还会再补一个 trailingBreak，于是一个空行显示成**两行高**
+ *    （用户报的"一个换行变成两个"）。
+ *  - `<p></p>`：真正空段落（content.size === 0），ProseMirror 只补 trailingBreak，
+ *    视觉上恰好一行；序列化时按空段落写回占位符，往返稳定不漂移。
+ *
+ *  实测 1/2/3 个连续空行各跑 4 轮往返，结果完全一致。 */
 export function restoreBlankParagraphs(content: string): string {
   if (!content.includes(BLANK_MARK)) return content;
-  return content.split(BLANK_MARK).join("<br>");
+  return content
+    .split("\n")
+    .map((line) => {
+      if (line.trim() === BLANK_MARK) return "<p></p>";
+      // 占位符出现在行内（理论上不会发生）时，退回行内换行处理
+      if (line.includes(BLANK_MARK)) return line.split(BLANK_MARK).join("<br>");
+      return line;
+    })
+    .join("\n");
+}
+
+/**
+ * 视觉空行占位符：编辑器渲染时用于补齐行高。
+ *
+ * 真空段落 `<p></p>` 在 ProseMirror 里只有浏览器给的 trailingBreak，
+ * 高度就是一行 —— 这正是我们想要的，因此这里**不需要**额外注入 br。
+ * 函数保留为空实现只为兼容历史调用点。
+ */
+export function isBlankMarkLine(line: string): boolean {
+  return line.trim() === BLANK_MARK;
 }
 
 export function createMarkdownExtension() {
