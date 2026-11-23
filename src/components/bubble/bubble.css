@@ -30,10 +30,40 @@
   cursor: grabbing;
 }
 
+/* ---------- 背景波纹（WaveField） ---------- */
+
+/* 铺满画布，压在底色/光斑之上、气泡之下。
+   z-index: 0 + 同层的 .qj-bubble-stage 用更高的层级，保证气泡永远在波纹之上；
+   pointer-events: none 让它不抢画布的拖拽/缩放事件。 */
+.qj-wave-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  /* 线条颜色跟着主题的辉光色走（主题 JSON 的 tokens.color.glow，形如 "114,203,161"）。
+     通透度压低：它是背景纹理，不该盖过气泡与文字。 */
+  color: rgba(var(--qj-glow-rgb), 0.26);
+}
+
+.qj-wave-svg {
+  display: block;
+}
+
+.qj-wave-svg path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1px;
+  /* 端点圆润，线条在极窄间距下不会显得毛糙 */
+  stroke-linecap: round;
+}
+
 /* 舞台：滚轮缩放 + 拖拽平移都作用在这层的 transform 上 */
 .qj-bubble-stage {
   position: absolute;
   inset: 0;
+  /* 波纹层 z-index:0，气泡舞台压在其上 */
+  z-index: 1;
   transform-origin: 0 0;
   will-change: transform;
   transition: transform 0.08s linear;

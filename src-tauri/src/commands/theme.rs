@@ -25,6 +25,46 @@ pub struct AppSettings {
     pub startup_window: Option<String>,
     /// 界面字体缩放（CSS zoom 倍率，1.0 = 标准）。缺省/None 按 1.0 处理。
     pub ui_font_scale: Option<f32>,
+    /// 气泡视图背景波纹参数（列间距/幅度/速度/指针半径/推力 + 总开关）。
+    /// 缺省/None 用前端 WAVE_DEFAULTS；老版本 settings.json 无此字段也能解析。
+    pub bubble_wave: Option<BubbleWave>,
+}
+
+/// 气泡背景波纹设置。全部字段 Option：前端只传改动的部分，None 保留旧值。
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct BubbleWave {
+    /// 总开关（关闭 = 静止成静态波纹，不跑 rAF）
+    pub enabled: Option<bool>,
+    /// 竖线横向间距（px）
+    pub column_gap: Option<f32>,
+    /// 噪声推动的水平幅度（px）
+    pub amplitude: Option<f32>,
+    /// 流动速度倍率（相对基准值，1.0 = 原速）
+    pub speed: Option<f32>,
+    /// 指针影响半径（px）
+    pub pointer_radius: Option<f32>,
+    /// 指针推力倍率（相对基准值，1.0 = 原强度）
+    pub pointer_strength: Option<f32>,
+}
+
+impl BubbleWave {
+    /// 把 Some 的字段覆盖到 target 上（None 保留 target 原值）。
+    fn merge_into(&self, target: &mut BubbleWave) {
+        macro_rules! merge_field {
+            ($field:ident) => {
+                if self.$field.is_some() {
+                    target.$field = self.$field;
+                }
+            };
+        }
+        merge_field!(enabled);
+        merge_field!(column_gap);
+        merge_field!(amplitude);
+        merge_field!(speed);
+        merge_field!(pointer_radius);
+        merge_field!(pointer_strength);
+    }
 }
 
 /// 通用设置部分更新：仅覆盖 partial 中为 Some 的字段。
@@ -40,6 +80,12 @@ fn merge_settings(current: &mut AppSettings, partial: &AppSettings) {
     }
     if partial.ui_font_scale.is_some() {
         current.ui_font_scale = partial.ui_font_scale;
+    }
+    if let Some(incoming) = partial.bubble_wave.as_ref() {
+        match current.bubble_wave.as_mut() {
+            Some(existing) => incoming.merge_into(existing),
+            None => current.bubble_wave = Some(incoming.clone()),
+        }
     }
 }
 
@@ -234,6 +280,7 @@ mod tests {
             default_notebook: Some("inbox".into()),
             startup_window: Some("main".into()),
             ui_font_scale: Some(1.0),
+            bubble_wave: None,
         };
         merge_settings(
             &mut current,
@@ -247,5 +294,65 @@ mod tests {
         assert_eq!(current.ui_font_scale, Some(1.3));
         assert_eq!(current.autosave_delay_ms, Some(400));
         assert_eq!(current.default_notebook.as_deref(), Some("inbox"));
+    }
+
+    #[test]
+    fn bubble_wave_camel_case_roundtrip() {
+        let raw = r#"{"bubbleWave":{"enabled":false,"columnGap":16,"amplitude":40,
+                        "speed":1.5,"pointerRadius":220,"pointerStrength":0.8}}"#;
+        let parsed: AppSettings = serde_json::from_str(raw).unwrap();
+        let wave = parsed.bubble_wave.expect("bubbleWave 应被解析");
+        assert_eq!(wave.enabled, Some(false));
+        assert_eq!(wave.column_gap, Some(16.0));
+        assert_eq!(wave.amplitude, Some(40.0));
+        assert_eq!(wave.speed, Some(1.5));
+        assert_eq!(wave.pointer_radius, Some(220.0));
+        assert_eq!(wave.pointer_strength, Some(0.8));
+
+        // 老版本 settings.json（完全没有 bubbleWave）也能解析
+        let legacy: AppSettings = serde_json::from_str(r#"{"uiFontScale":1.2}"#).unwrap();
+        assert!(legacy.bubble_wave.is_none());
+    }
+
+    #[test]
+    fn bubble_wave_partial_patch_keeps_other_fields() {
+        let mut current = AppSettings {
+            bubble_wave: Some(BubbleWave {
+                enabled: Some(true),
+                column_gap: Some(10.0),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        // 只改间距，其余字段应原样保留（滑杆各自独立落盘的场景）
+        merge_settings(
+            &mut current,
+            &AppSettings {
+                bubble_wave: Some(BubbleWave {
+                    column_gap: Some(24.0),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        );
+        let wave = current.bubble_wave.expect("bubble_wave 应存在");
+        assert_eq!(wave.column_gap, Some(24.0));
+        assert_eq!(wave.enabled, Some(true));
+    }
+
+    #[test]
+    fn bubble_wave_merge_creates_when_absent() {
+        let mut current = AppSettings::default();
+        merge_settings(
+            &mut current,
+            &AppSettings {
+                bubble_wave: Some(BubbleWave {
+                    enabled: Some(false),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        );
+        assert_eq!(current.bubble_wave.unwrap().enabled, Some(false));
     }
 }

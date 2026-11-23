@@ -1,6 +1,7 @@
 // 设置窗口：主题定制（预设 / 窗口效果 / 每模块背景图·雾化·纯色·文字色 + 对比度读数）。
 // 所有改动写入 zustand 预览态（本窗口实时生效），点"应用"才持久化并广播全窗口。
 import { useCallback, useEffect, useRef, useState } from "react";
+import { WAVE_RANGES, normalizeWaveSettings, type WaveSettings } from "../../lib/waveSettings";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api, type AppSettings, type ModuleConfig, type ThemeConfig } from "../../lib/api";
 import { filePathToResizedDataUri } from "../../lib/dataUri";
@@ -70,6 +71,10 @@ export default function SettingsWindow() {
   const [fontScale, setFontScale] = useState<number | null>(null);
   const fontScaleRef = useRef(1);
   const fontScaleTimer = useRef<number | null>(null);
+  // 气泡背景波纹参数
+  const [wave, setWave] = useState<WaveSettings | null>(null);
+  const waveRef = useRef<WaveSettings | null>(null);
+  const waveTimer = useRef<number | null>(null);
 
   useEffect(() => {
     void api
@@ -79,6 +84,9 @@ export default function SettingsWindow() {
         const scale = s.uiFontScale ?? 1;
         fontScaleRef.current = scale;
         setFontScale(scale);
+        const w = normalizeWaveSettings(s.bubbleWave);
+        waveRef.current = w;
+        setWave(w);
       })
       .catch(console.error);
   }, []);
@@ -121,6 +129,35 @@ export default function SettingsWindow() {
       }
     },
     [persistFontScale]
+  );
+
+  const persistWave = useCallback((value: WaveSettings) => {
+    void api
+      .settingsSet({ bubbleWave: value })
+      .catch((e) => setMessage(`保存波纹设置失败: ${String(e)}`));
+  }, []);
+
+  /** 改波纹参数：本地立即生效，防抖落盘（settings_set 每次都写盘 + 广播） */
+  const handleWave = (patch: Partial<WaveSettings>) => {
+    const next = { ...(waveRef.current ?? normalizeWaveSettings(null)), ...patch };
+    waveRef.current = next;
+    setWave(next);
+    if (waveTimer.current !== null) window.clearTimeout(waveTimer.current);
+    waveTimer.current = window.setTimeout(() => {
+      waveTimer.current = null;
+      persistWave(next);
+    }, 350);
+  };
+
+  // 波纹的滑杆同样要补存
+  useEffect(
+    () => () => {
+      if (waveTimer.current !== null) {
+        window.clearTimeout(waveTimer.current);
+        if (waveRef.current) persistWave(waveRef.current);
+      }
+    },
+    [persistWave]
   );
 
   // 加载预设列表（每个预设取完整配置用于色块展示）
@@ -514,6 +551,135 @@ export default function SettingsWindow() {
               放大缩小整个界面的文字与图标（85%–150%），所有窗口实时同步。编辑区内还可按住 Ctrl +
               滚轮单独缩放正文视图（不影响实际字号，Ctrl+0 复位）。
             </p>
+          </section>
+
+          <section className="qj-settings-section">
+            <h3>背景波纹（气泡视图）</h3>
+            <p className="qj-settings-note" style={{ marginTop: 0 }}>
+              气泡视图背景里的流动竖线。颜色自动跟随当前主题的辉光色，换主题即换色；鼠标划过时邻近线条会被推开再回弹。
+            </p>
+
+            <div className="qj-control-row">
+              <span className="qj-control-label">显示波纹</span>
+              <div className="qj-control-value">
+                <label className="qj-check">
+                  <input
+                    type="checkbox"
+                    disabled={!wave}
+                    checked={wave?.enabled ?? true}
+                    onChange={(e) => handleWave({ enabled: e.target.checked })}
+                  />
+                  启用
+                </label>
+              </div>
+            </div>
+            <p className="qj-settings-note">
+              关闭后波纹静止成静态图案，不再逐帧重绘（省电，适合长时间挂着不动）。
+            </p>
+
+            {!wave && <p className="qj-settings-note">正在读取设置…</p>}
+
+            {wave && (
+              <>
+                <div className="qj-control-row" style={{ marginTop: 14 }}>
+                  <span className="qj-control-label">线条间距</span>
+                  <div className="qj-control-value">
+                    <input
+                      type="range"
+                      min={WAVE_RANGES.columnGap.min}
+                      max={WAVE_RANGES.columnGap.max}
+                      step={WAVE_RANGES.columnGap.step}
+                      value={wave.columnGap}
+                      onChange={(e) => handleWave({ columnGap: Number(e.target.value) })}
+                    />
+                    <span className="qj-control-num">{wave.columnGap}px</span>
+                  </div>
+                </div>
+
+                <div className="qj-control-row">
+                  <span className="qj-control-label">起伏幅度</span>
+                  <div className="qj-control-value">
+                    <input
+                      type="range"
+                      min={WAVE_RANGES.amplitude.min}
+                      max={WAVE_RANGES.amplitude.max}
+                      step={WAVE_RANGES.amplitude.step}
+                      value={wave.amplitude}
+                      onChange={(e) => handleWave({ amplitude: Number(e.target.value) })}
+                    />
+                    <span className="qj-control-num">{wave.amplitude}px</span>
+                  </div>
+                </div>
+
+                <div className="qj-control-row">
+                  <span className="qj-control-label">流动速度</span>
+                  <div className="qj-control-value">
+                    <input
+                      type="range"
+                      min={WAVE_RANGES.speed.min}
+                      max={WAVE_RANGES.speed.max}
+                      step={WAVE_RANGES.speed.step}
+                      value={wave.speed}
+                      onChange={(e) => handleWave({ speed: Number(e.target.value) })}
+                    />
+                    <span className="qj-control-num">{wave.speed.toFixed(1)}×</span>
+                  </div>
+                </div>
+
+                <div className="qj-control-row">
+                  <span className="qj-control-label">鼠标影响半径</span>
+                  <div className="qj-control-value">
+                    <input
+                      type="range"
+                      min={WAVE_RANGES.pointerRadius.min}
+                      max={WAVE_RANGES.pointerRadius.max}
+                      step={WAVE_RANGES.pointerRadius.step}
+                      value={wave.pointerRadius}
+                      onChange={(e) => handleWave({ pointerRadius: Number(e.target.value) })}
+                    />
+                    <span className="qj-control-num">{wave.pointerRadius}px</span>
+                  </div>
+                </div>
+
+                <div className="qj-control-row">
+                  <span className="qj-control-label">推开力度</span>
+                  <div className="qj-control-value">
+                    <input
+                      type="range"
+                      min={WAVE_RANGES.pointerStrength.min}
+                      max={WAVE_RANGES.pointerStrength.max}
+                      step={WAVE_RANGES.pointerStrength.step}
+                      value={wave.pointerStrength}
+                      onChange={(e) => handleWave({ pointerStrength: Number(e.target.value) })}
+                    />
+                    <span className="qj-control-num">{wave.pointerStrength.toFixed(1)}×</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="qj-btn"
+                  style={{ marginTop: 12 }}
+                  onClick={() =>
+                    handleWave({
+                      enabled: true,
+                      columnGap: 10,
+                      amplitude: 32,
+                      speed: 1,
+                      pointerRadius: 175,
+                      pointerStrength: 1,
+                    })
+                  }
+                >
+                  恢复默认
+                </button>
+
+                <p className="qj-settings-note">
+                  线条越密（间距越小）越细腻，但逐帧计算量越大；低配机器建议 16px 以上。
+                  推开力度调到 0 就完全不受鼠标影响。
+                </p>
+              </>
+            )}
           </section>
         </div>
 

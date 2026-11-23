@@ -12,6 +12,8 @@ import {
   type ReactNode,
 } from "react";
 import { RippleLayer, type RippleSpec } from "./RippleLayer";
+import { WaveLayer } from "./WaveLayer";
+import { useWaveSettings } from "../../stores/useWaveSettings";
 import "./bubble.css";
 
 /** 视觉放大系数：布局算出的直径偏保守（为重叠兜底），渲染时放大一点更有存在感。
@@ -162,6 +164,9 @@ export function layoutBubbles(items: BubbleItem[], viewport: { w: number; h: num
 
 export function BubbleCanvas({ items, onOpen, emptyHint, layerKey }: BubbleCanvasProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  /** 背景波纹参数（设置窗口可调，改动即时生效） */
+  const waveSettings = useWaveSettings((s) => s.settings);
+  const initWaveSettings = useWaveSettings((s) => s.init);
   const [viewport, setViewport] = useState({ w: 900, h: 560 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   /** 视口缩放：滚轮改变，0.6–2.0 */
@@ -172,6 +177,11 @@ export function BubbleCanvas({ items, onOpen, emptyHint, layerKey }: BubbleCanva
   );
   /** 层级切换时不做入场位移过渡，避免"新一层从很远的地方滑进来" */
   const skipTransition = useRef(false);
+
+  // 波纹参数：进气泡视图时挂上广播监听 + 拉一次当前值
+  useEffect(() => {
+    void initWaveSettings();
+  }, [initWaveSettings]);
 
   // 尺寸跟随容器（ResizeObserver：窗口缩放/面板拖拽都能跟上）
   useLayoutEffect(() => {
@@ -308,6 +318,10 @@ export function BubbleCanvas({ items, onOpen, emptyHint, layerKey }: BubbleCanva
       role="group"
       aria-label="气泡视图"
     >
+      {/* 背景波纹：必须在 .qj-bubble-stage 之外——stage 上挂着拖拽平移/缩放的
+          transform，波纹若在 stage 内会跟着气泡一起被拖动，"背景"就不成立了 */}
+      <WaveLayer settings={waveSettings} />
+
       {placed.length === 0 && <div className="qj-bubble-empty">{emptyHint}</div>}
 
       <div

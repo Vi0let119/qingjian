@@ -1,5 +1,6 @@
 // 所有 Tauri 命令的强类型封装。组件禁止裸调 invoke，一律走这里。
 import { invoke } from "@tauri-apps/api/core";
+import type { WaveSettings } from "./waveSettings";
 
 // ---------- 类型（与 Rust #[serde(rename_all = "camelCase")] 对齐） ----------
 
@@ -40,6 +41,8 @@ export interface AppSettings {
   startupWindow?: "main" | "fragment" | null;
   /** 界面字体缩放（CSS zoom 倍率，1.0 = 标准，缺省值） */
   uiFontScale?: number | null;
+  /** 气泡视图背景波纹参数（缺省 = 用前端 WAVE_DEFAULTS） */
+  bubbleWave?: Partial<WaveSettings> | null;
 }
 
 // ---------- 附件 ----------
